@@ -1,0 +1,8 @@
+= pydarts
+:toc: auto
+
+== App Details
+
+This is a python app to track the score of a Darts game.
+
+== TBC

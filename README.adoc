@@ -3,6 +3,6 @@
 
 == App Details
 
-This is a python app to track the score of a Darts game.
+This is a python app for tracking the score of a Darts game.
 
 == TBC

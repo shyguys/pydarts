@@ -36,7 +36,8 @@ class App(ctk.CTk):
         )
 
         self.textbox_players = ctk.CTkTextbox(
-            master=self
+            master=self,
+            state="disabled"
         )
         self.textbox_players.grid(
             row=1, column=0,
@@ -52,10 +53,12 @@ class App(ctk.CTk):
             return None
         
         self.players.append(player)
+        self.textbox_players.configure(state="normal")
         self.textbox_players.insert(
             "insert",
             f"{self.players[len(self.players)-1]}\n"
         )
+        self.textbox_players.configure(state="disabled")
         return None
 
     def is_valid_player(self, player: str) -> bool:

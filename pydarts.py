@@ -11,30 +11,42 @@ class App(tk.Tk):
         self.rowconfigure(index=0, weight=1)
         self.columnconfigure(index=0, weight=1)
 
-        # --- PREGAME --- #
+        self.pregame_window = PregameWindow(self)
+        self.game_window = GameWindow(self)
+        self.postgame = PostgameWindow(self)
 
-        self.pregame_parent = ttk.Frame(master=self, padding=5)
-        self.pregame_parent.grid(row=0, column=0, sticky=("n", "s", "e", "w"))
+        self.show_pregame_window()
 
-        self.pregame_notebook = ttk.Notebook(master=self.pregame_parent)
-        self.pregame_notebook.grid(row=0, column=0, sticky=("n", "s", "e", "w"))
+    def show_pregame_window(self):
+        self.pregame_window.grid(row=0, column=0, sticky=("n", "s", "e", "w"))
 
-        self.pregame_game_parent = ttk.Frame(master=self.pregame_notebook)
-        self.pregame_notebook.add(child=self.pregame_game_parent, text="Spiel")
 
-        self.pregame_players_parent = ttk.Frame(master=self.pregame_notebook)
-        self.pregame_notebook.add(child=self.pregame_players_parent, text="Spieler")
+class PregameWindow(ttk.Frame):
+    def __init__(self, parent: tk.Tk):
+        super().__init__(master=parent)
 
-        self.pregame_overview_parent = ttk.Frame(master=self.pregame_notebook)
-        self.pregame_notebook.add(child=self.pregame_overview_parent, text="Übersicht")
+        self.notebook = ttk.Notebook(master=self)
+        self.notebook.grid(row=0, column=0, sticky=("n", "s", "e", "w"))
 
-        # --- GAME --- #
+        self.game_tab = ttk.Frame(master=self.notebook)
+        self.notebook.add(child=self.game_tab, text="Spiel")
 
-        pass
+        self.players_tab = ttk.Frame(master=self.notebook)
+        self.notebook.add(child=self.players_tab, text="Spieler")
 
-        # --- POSTGAME --- #
+        self.overview_tab = ttk.Frame(master=self.notebook)
+        self.notebook.add(child=self.overview_tab, text="Übersicht")
 
-        pass
+
+class GameWindow(ttk.Frame):
+    def __init__(self, parent: tk.Tk):
+        super().__init__(master=parent)
+
+
+class PostgameWindow(ttk.Frame):
+    def __init__(self, parent: tk.Tk):
+        super().__init__(master=parent)
+
 
 
 def main():

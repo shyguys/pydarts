@@ -21,8 +21,8 @@ class App(tk.Tk):
         self.pregame_window.grid(row=0, column=0, sticky="nsew")
     
     # [TODO]: define class Window(ABC) for "global" functions and attributes
-    def walk_widget_hierarchy(self, child: ttk.Frame):
-        stack = child.winfo_children()
+    def walk_widget_hierarchy(self, widget: ttk.Widget):
+        stack = widget.winfo_children()
         while stack:
             parent = stack.pop()
             yield parent

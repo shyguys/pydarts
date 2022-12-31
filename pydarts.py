@@ -202,9 +202,12 @@ class Game():
         pass
 
 
+# [TODO]: define args
+def parse_args():
+    return argparse.Namespace(debug=True) 
+
 def main():
-    # [TODO]: parse_args()
-    args = argparse.Namespace(debug=True)
+    args = parse_args()
     app = App(debug=args.debug)
     app.mainloop()
 

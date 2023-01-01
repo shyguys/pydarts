@@ -1,10 +1,18 @@
 import argparse
+import logging
 import tkinter as tk
 import tkinter.ttk as ttk
+
+
+_PROG = "pydarts"
+
 
 class App(tk.Tk):
     def __init__(self, debug: bool = False):
         super().__init__()
+
+        self.enable_debugging()
+
         self.title(string="PyDarts")
         self.minsize(width=800, height=600)
         self.rowconfigure(index=0, weight=1)
@@ -16,6 +24,13 @@ class App(tk.Tk):
         # self.postgame_window = PostgameWindow(master=self, debug=debug)
 
         self.show_pregame_window()
+
+    def enable_debugging(self):
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="[%(asctime)s - %(levelname)s] %(message)s",
+            datefmt="%H:%M:%S"
+        )
 
     def show_pregame_window(self):
         self.pregame_window.grid(row=0, column=0, sticky="nsew")
@@ -37,14 +52,12 @@ class Window(ttk.Frame):
     def enable_debugging(self):
         for widget in self.walk_widget_hierarchy():
             try:
+                # [TODO]: highlight additional way?
                 widget.configure(borderwidth=1, relief="solid")
             except tk.TclError:
                 # Widget has no 'borderwidth' option
-                # [TODO]:
-                # - highlight another way?
-                # - logging instead of print
-                print(f"widget cannot be bordered: {widget!r}")
-
+                logging.warning(f"widget cannot be bordered: {widget!r}")
+                
 
 class PregameWindow(Window):
     def __init__(self, *args, **kwargs):
@@ -211,9 +224,13 @@ class Game():
         pass
 
 
-# [TODO]: define args
-def parse_args():
-    return argparse.Namespace(debug=False) 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=_PROG)
+    parser.add_argument(
+        "-d", "--debug", action="store_true", default=False, dest="debug",
+        help="highlight widgets and be verbose"
+    )
+    return parser.parse_args()
 
 def main():
     args = parse_args()

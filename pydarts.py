@@ -10,30 +10,48 @@ class App(tk.Tk):
         self.rowconfigure(index=0, weight=1)
         self.columnconfigure(index=0, weight=1)
 
-        self.pregame_window = PregameWindow(parent=self, debug=debug)
-        self.game = Game()
-        self.game_window = GameWindow(parent=self)
-        self.postgame_window = PostgameWindow(parent=self)
+        self.pregame_window = PregameWindow(master=self, debug=debug)
+        # self.game = Game()
+        # self.game_window = GameWindow(master=self, debug=debug)
+        # self.postgame_window = PostgameWindow(master=self, debug=debug)
 
         self.show_pregame_window()
 
     def show_pregame_window(self):
         self.pregame_window.grid(row=0, column=0, sticky="nsew")
-    
-    # [TODO]: define class Window(ABC) for "global" functions and attributes
-    def walk_widget_hierarchy(self, widget: ttk.Widget):
-        stack = widget.winfo_children()
-        while stack:
-            parent = stack.pop()
-            yield parent
-            for child in reversed(parent.winfo_children()):
-                stack.append(child)
 
-class PregameWindow(ttk.Frame):
-    def __init__(self, parent: tk.Tk, debug: bool = False):
+
+class Window(ttk.Frame):
+    def __init__(self, *args, debug: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.debug = debug
+
+    def walk_widget_hierarchy(self):
+        children = self.winfo_children()
+        while children:
+            widget = children.pop()
+            yield widget
+            for child in reversed(widget.winfo_children()):
+                children.append(child)
+
+    def enable_debugging(self):
+        for widget in self.walk_widget_hierarchy():
+            try:
+                widget.configure(borderwidth=1, relief="solid")
+            except tk.TclError:
+                # Widget has no 'borderwidth' option
+                # [TODO]:
+                # - highlight another way?
+                # - logging instead of print
+                print(f"widget cannot be bordered: {widget!r}")
+
+
+class PregameWindow(Window):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, padding=5, **kwargs)
+
         # --- window --- #
 
-        super().__init__(master=parent, padding=5)
         self.rowconfigure(index=0, weight=1)
         self.columnconfigure(index=0, weight=1)
 
@@ -163,17 +181,8 @@ class PregameWindow(ttk.Frame):
 
         # --- debug --- #
 
-        if debug:
+        if self.debug:
             self.enable_debugging()
-
-    def enable_debugging(self):
-        for widget in self.master.walk_widget_hierarchy(self):
-            try:
-                widget.configure(borderwidth=1, relief="solid")
-            except tk.TclError:
-                # Widget has no 'borderwidth' option
-                # [TODO]: highlight another way?
-                print(f"widget cannot be bordered: {widget!r}")
 
     def start_game(self):
         print("Start!")
@@ -187,14 +196,14 @@ class PregameWindow(ttk.Frame):
     def goto_overview_tab(self):
         self.root.select(self.overview_tab)
 
-class GameWindow(ttk.Frame):
-    def __init__(self, parent: tk.Tk):
-        super().__init__(master=parent, padding=5)
+class GameWindow(Window):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
-class PostgameWindow(ttk.Frame):
-    def __init__(self, parent: tk.Tk):
-        super().__init__(master=parent, padding=5)
+class PostgameWindow(Window):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Game():
@@ -204,7 +213,7 @@ class Game():
 
 # [TODO]: define args
 def parse_args():
-    return argparse.Namespace(debug=True) 
+    return argparse.Namespace(debug=False) 
 
 def main():
     args = parse_args()

@@ -76,6 +76,24 @@ class PregameWindow(Window):
             "overview": "Spiel starten"
         }
 
+        self.modes = {
+            "301": {
+                "display_name": "301",
+                "description": "Wirf exakt 301 Punkte."
+            },
+            "501": {
+                "display_name": "501",
+                "description": "Wirf exakt 501 Punkte."
+            }
+        }
+
+        self.mode_selection_columns = {
+            "#0": "Modus",
+            "description": "Beschreibung"
+        }
+
+        self.selected_mode = tk.StringVar()
+
         # --- root notebook --- #
 
         self.root = ttk.Notebook(master=self)
@@ -92,11 +110,34 @@ class PregameWindow(Window):
 
         self.mode_content_frame = ttk.Frame(master=self.mode_tab, padding=5)
         self.mode_content_frame.grid(row=0, column=0, sticky="nsew")
+        self.mode_content_frame.rowconfigure(index=0, weight=1)
+        self.mode_content_frame.columnconfigure(index=0, weight=1)
 
-        self.mode_select_mode_lbl = ttk.Label(
-            master=self.mode_content_frame, text="Bitte wähle einen Modus:"
+        # WTF?!
+        # [TODO]:
+        # - lock user on tab until a selection is made
+        # - save selected mode
+        # - dynamically add/configure columns if it makes sense
+        # - calculate minwidth for 'Modus' based on longest 'display_name'
+        self.mode_select_mode_tre = ttk.Treeview(
+            master=self.mode_content_frame, columns=("description"),
+            selectmode="browse"
         )
-        self.mode_select_mode_lbl.grid(row=0, column=0)
+        self.mode_select_mode_tre.column(column="#0", stretch=tk.NO)
+        self.mode_select_mode_tre.column(column="description", anchor="w")
+        self.mode_select_mode_tre.heading(
+            column="#0", text=self.mode_selection_columns["#0"]
+        )
+        self.mode_select_mode_tre.heading(
+            column="description",
+            text=self.mode_selection_columns["description"]
+        )
+        for mode in self.modes.values():
+            self.mode_select_mode_tre.insert(
+                parent="", index=tk.END, text=mode["display_name"],
+                values=(mode["description"],)
+            )
+        self.mode_select_mode_tre.grid(row=0, column=0, sticky="nsew")
 
         # --- mode tab: bottom bar --- #
 

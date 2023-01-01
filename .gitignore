@@ -1,2 +1,5 @@
 # ignore local python cache
 *__pycache__
+
+# test file
+*test.py

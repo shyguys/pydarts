@@ -3,7 +3,7 @@ import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 
-import modes
+import games
 
 
 _PROG = "pydarts"
@@ -123,10 +123,10 @@ class PregameWindow(Window):
             column="description",
             text=self.mode_selection_columns["description"]
         )
-        for id in modes.get_ids():
+        for game in games.METADATA.games:
             self.mode_select_mode_tre.insert(
-                parent="", index=tk.END, text=modes.get_display_name_of(id),
-                values=(modes.get_description_of(id),)
+                parent="", index=tk.END, text=game.display_name,
+                values=(game.description,)
             )
         self.mode_select_mode_tre.grid(row=0, column=0, sticky="nsew")
 

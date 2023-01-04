@@ -3,6 +3,8 @@ import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 
+import modes
+
 
 _PROG = "pydarts"
 
@@ -71,20 +73,9 @@ class PregameWindow(Window):
         # --- namespace --- #
 
         self.tab_texts = {
-            "mode":"Modus wählen",
-            "players":"Spieler hinzufügen",
+            "mode": "Modus wählen",
+            "players": "Spieler hinzufügen",
             "overview": "Spiel starten"
-        }
-
-        self.modes = {
-            "301": {
-                "display_name": "301",
-                "description": "Wirf exakt 301 Punkte."
-            },
-            "501": {
-                "display_name": "501",
-                "description": "Wirf exakt 501 Punkte."
-            }
         }
 
         self.mode_selection_columns = {
@@ -132,10 +123,10 @@ class PregameWindow(Window):
             column="description",
             text=self.mode_selection_columns["description"]
         )
-        for mode in self.modes.values():
+        for id in modes.get_ids():
             self.mode_select_mode_tre.insert(
-                parent="", index=tk.END, text=mode["display_name"],
-                values=(mode["description"],)
+                parent="", index=tk.END, text=modes.get_display_name_of(id),
+                values=(modes.get_description_of(id),)
             )
         self.mode_select_mode_tre.grid(row=0, column=0, sticky="nsew")
 

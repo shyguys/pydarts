@@ -55,3 +55,12 @@ class Mode301(Mode):
 class Mode501(Mode):
     def __init__(self) -> None:
         super().__init__(build_mode_metadata_of("501"))
+
+
+def build_mode_of(id: str) -> Mode:
+    if id == "301":
+        return Mode301()
+    elif id == "501":
+        return Mode501()
+    else:
+        raise ValueError(f"there is no mode for id: {id!r}")

@@ -229,17 +229,38 @@ class PregameWindow(Window):
         if self.debug:
             self.enable_debugging()
 
+        # --- logic --- #
+
+        self.root.hide(tab_id=self.players_tab)
+        self.root.hide(tab_id=self.overview_tab)
+        self.goto_players_tab_btn.state(["disabled"])
+        self.mode_select_mode_tre.bind(
+            "<<TreeviewSelect>>", lambda e: self.handle_mode_selection()
+        )
+
+
     def start_game(self):
         print("Start!")
 
+    def handle_mode_selection(self):
+        self.enable_players_tab()
+        self.enable_overview_tab()
+
+    def enable_players_tab(self):
+        self.root.add(child=self.players_tab)
+        self.goto_players_tab_btn.state(["!disabled"])
+
+    def enable_overview_tab(self):
+        self.root.add(child=self.overview_tab)
+
     def goto_mode_tab(self):
-        self.root.select(self.mode_tab)
+        self.root.select(tab_id=self.mode_tab)
 
     def goto_players_tab(self):
-        self.root.select(self.players_tab)
+        self.root.select(tab_id=self.players_tab)
 
     def goto_overview_tab(self):
-        self.root.select(self.overview_tab)
+        self.root.select(tab_id=self.overview_tab)
 
 class GameWindow(Window):
     def __init__(self, *args, **kwargs):

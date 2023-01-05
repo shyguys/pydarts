@@ -1,47 +1,42 @@
-import argparse
 import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 
-import games
-
-
-_PROG = "pydarts"
+from modules.games import METADATA
 
 
 class App(tk.Tk):
-    def __init__(self, debug: bool = False):
+    def __init__(self, enable_debugging: bool = False):
         super().__init__()
+        self._configure_logging()
+        self._configure_self()
 
-        self.enable_debugging()
+        self.pregame_window = PregameWindow(
+            master=self, enable_debugging=enable_debugging
+        )
+        self._show_pregame_window()
 
-        self.title(string="PyDarts")
-        self.minsize(width=800, height=600)
-        self.rowconfigure(index=0, weight=1)
-        self.columnconfigure(index=0, weight=1)
-
-        self.pregame_window = PregameWindow(master=self, debug=debug)
-        # self.game = Game()
-        # self.game_window = GameWindow(master=self, debug=debug)
-        # self.postgame_window = PostgameWindow(master=self, debug=debug)
-
-        self.show_pregame_window()
-
-    def enable_debugging(self):
+    def _configure_logging(self):
         logging.basicConfig(
             level=logging.DEBUG,
             format="[%(asctime)s - %(levelname)s] %(message)s",
             datefmt="%H:%M:%S"
         )
 
-    def show_pregame_window(self):
+    def _configure_self(self):
+        self.title(string="PyDarts")
+        self.minsize(width=800, height=600)
+        self.rowconfigure(index=0, weight=1)
+        self.columnconfigure(index=0, weight=1)
+
+    def _show_pregame_window(self):
         self.pregame_window.grid(row=0, column=0, sticky="nsew")
 
 
 class Window(ttk.Frame):
-    def __init__(self, *args, debug: bool = False, **kwargs):
+    def __init__(self, *args, enable_debugging: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.debug = debug
+        self.is_debugging_enabled = enable_debugging
 
     def walk_widget_hierarchy(self):
         children = self.winfo_children()
@@ -51,7 +46,7 @@ class Window(ttk.Frame):
             for child in reversed(widget.winfo_children()):
                 children.append(child)
 
-    def enable_debugging(self):
+    def configure_debugging(self):
         for widget in self.walk_widget_hierarchy():
             try:
                 # [TODO]: highlight additional way?
@@ -123,7 +118,7 @@ class PregameWindow(Window):
             column="description",
             text=self.mode_selection_columns["description"]
         )
-        for game in games.METADATA.games:
+        for game in METADATA.games:
             self.mode_select_mode_tre.insert(
                 parent="", index=tk.END, text=game.display_name,
                 values=(game.description,)
@@ -226,8 +221,8 @@ class PregameWindow(Window):
 
         # --- debug --- #
 
-        if self.debug:
-            self.enable_debugging()
+        if self.is_debugging_enabled:
+            self.configure_debugging()
 
         # --- logic --- #
 
@@ -275,20 +270,3 @@ class PostgameWindow(Window):
 class Game():
     def __init__(self):
         pass
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog=_PROG)
-    parser.add_argument(
-        "-d", "--debug", action="store_true", default=False, dest="debug",
-        help="highlight widgets and be verbose"
-    )
-    return parser.parse_args()
-
-def main():
-    args = parse_args()
-    app = App(debug=args.debug)
-    app.mainloop()
-
-if __name__ == "__main__":
-    main()

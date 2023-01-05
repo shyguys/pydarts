@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 # ---------------------------- BEGIN EXCEPTIONS ----------------------------- #
@@ -34,28 +34,22 @@ class _GamesMetadata():
     a flexible and scalable interface between the GUI and game APIs.
     """
 
-    games: list[_GameMetadata] = field(default_factory=list)
+    games: tuple[_GameMetadata]
 
-    def get_ids(self):
-        return [ game.id for game in self.games ]
+    def get_ids(self) -> list[str]:
+        return [game.id for game in self.games]
 
-    def get_game_for(self, id: str) -> _GameMetadata:
+    def get_game(self, id: str) -> _GameMetadata:
         for game in self.games:
             if game.id == id:
                 return game
         raise GameIdError(id)
 
-    def get_display_name_for(self, id: str):
-        return self.get_game_for(id).display_name
 
-    def get_description_for(self, id: str):
-        return self.get_game_for(id).description
-
-
-METADATA = _GamesMetadata([
+METADATA = _GamesMetadata((
     _GameMetadata("301", "301", "Wirf exakt 301 Punkte."),
     _GameMetadata("501", "501", "Wirf exakt 501 Punkte.")
-])
+))
 
 # ------------------------------ END METADATA ------------------------------- #
 
@@ -65,7 +59,7 @@ METADATA = _GamesMetadata([
 
 # ------------------------------- BEGIN GAME -------------------------------- #
 
-class Game(ABC):
+class BaseGame(ABC):
     def __init__(self, metadata: _GameMetadata) -> None:
         self.metadata: _GameMetadata = metadata
 
@@ -73,17 +67,17 @@ class Game(ABC):
         return self.metadata.__repr__()
 
 
-class Game301(Game):
+class Game301(BaseGame):
     def __init__(self) -> None:
-        super().__init__(METADATA.get_game_for("301"))
+        super().__init__(METADATA.get_game("301"))
 
 
-class Game501(Game):
+class Game501(BaseGame):
     def __init__(self) -> None:
-        super().__init__(METADATA.get_game_for("501"))
+        super().__init__(METADATA.get_game("501"))
 
 
-def build_game_for(id: str) -> Game:
+def build_game_for(id: str) -> BaseGame:
     if id == "301":
         return Game301()
     elif id == "501":

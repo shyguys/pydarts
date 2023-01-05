@@ -17,10 +17,9 @@ class GameIdError(Exception):
 # ----------------------------- BEGIN METADATA ------------------------------ #
 
 @dataclass(frozen=True)
-class _Metadata():
+class _GameMetadata():
     """
-    The metadata of a game, e.g. name and description. Purpose of this class is
-    to provide a flexible and scalable interface between the GUI and game APIs.
+    The metadata of a game, e.g. name and description.
     """
 
     id: str
@@ -29,13 +28,18 @@ class _Metadata():
 
 
 @dataclass(frozen=True)
-class Metadata():
-    games: list[_Metadata] = field(default_factory=list)
+class _GamesMetadata():
+    """
+    The metadata of all games. Purpose of this class is to provide
+    a flexible and scalable interface between the GUI and game APIs.
+    """
+
+    games: list[_GameMetadata] = field(default_factory=list)
 
     def get_ids(self):
         return [ game.id for game in self.games ]
 
-    def get_game_for(self, id: str) -> _Metadata:
+    def get_game_for(self, id: str) -> _GameMetadata:
         for game in self.games:
             if game.id == id:
                 return game
@@ -48,9 +52,9 @@ class Metadata():
         return self.get_game_for(id).description
 
 
-METADATA = Metadata([
-    _Metadata("301", "301", "Wirf exakt 301 Punkte."),
-    _Metadata("501", "501", "Wirf exakt 501 Punkte.")
+METADATA = _GamesMetadata([
+    _GameMetadata("301", "301", "Wirf exakt 301 Punkte."),
+    _GameMetadata("501", "501", "Wirf exakt 501 Punkte.")
 ])
 
 # ------------------------------ END METADATA ------------------------------- #
@@ -62,8 +66,8 @@ METADATA = Metadata([
 # ------------------------------- BEGIN GAME -------------------------------- #
 
 class Game(ABC):
-    def __init__(self, metadata: _Metadata) -> None:
-        self.metadata: _Metadata = metadata
+    def __init__(self, metadata: _GameMetadata) -> None:
+        self.metadata: _GameMetadata = metadata
 
     def __repr__(self) -> str:
         return self.metadata.__repr__()

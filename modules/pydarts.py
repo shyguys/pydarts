@@ -1,7 +1,15 @@
 import argparse
+import logging
 
 from modules.app import App
 
+
+def configure_logging():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="[%(asctime)s - %(levelname)s] %(message)s",
+        datefmt="%H:%M:%S"
+    )
 
 def parse_args() -> argparse.Namespace:
     prog = "pydarts"
@@ -13,6 +21,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 def main():
+    configure_logging()
     args = parse_args()
     app = App(enable_debugging=args.enable_debugging)
     app.mainloop()

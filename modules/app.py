@@ -8,20 +8,12 @@ from modules.games import METADATA
 class App(tk.Tk):
     def __init__(self, enable_debugging: bool = False):
         super().__init__()
-        self._configure_logging()
         self._configure_self()
 
         self.pregame_window = PregameWindow(
             master=self, enable_debugging=enable_debugging
         )
         self._show_pregame_window()
-
-    def _configure_logging(self):
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="[%(asctime)s - %(levelname)s] %(message)s",
-            datefmt="%H:%M:%S"
-        )
 
     def _configure_self(self):
         self.title(string="PyDarts")
@@ -58,14 +50,12 @@ class Window(ttk.Frame):
 
 class PregameWindow(Window):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, padding=5, **kwargs)
-
         # --- window --- #
-
+        super().__init__(*args, padding=5, **kwargs)
         self.rowconfigure(index=0, weight=1)
         self.columnconfigure(index=0, weight=1)
 
-        # --- namespace --- #
+        # --- root notebook --- #
 
         self.tab_texts = {
             "mode": "Modus wählen",
@@ -73,57 +63,32 @@ class PregameWindow(Window):
             "overview": "Spiel starten"
         }
 
+        self.root = self._build_root(self)
+
+        # --- mode tab --- #
+
+        self.mode_tab = self._build_mode_tab(
+            parent=self.root, text=self.tab_texts["mode"]
+        )
+
+        self.mode_tab_content_frame = self._build_mode_tab_content_frame(
+            parent=self.mode_tab
+        )
+
         self.mode_selection_columns = {
             "#0": "Modus",
             "description": "Beschreibung"
         }
-
-        self.selected_mode = tk.StringVar()
-
-        # --- root notebook --- #
-
-        self.root = ttk.Notebook(master=self)
-        self.root.grid(row=0, column=0, sticky="nsew")
-
-        # --- mode tab --- #
-
-        self.mode_tab = ttk.Frame(master=self.root, padding=5)
-        self.mode_tab.rowconfigure(index=0, weight=1)
-        self.mode_tab.columnconfigure(index=0, weight=1)
-        self.root.add(child=self.mode_tab, text=self.tab_texts["mode"])
-
-        # --- mode tab: content frame --- #
-
-        self.mode_content_frame = ttk.Frame(master=self.mode_tab, padding=5)
-        self.mode_content_frame.grid(row=0, column=0, sticky="nsew")
-        self.mode_content_frame.rowconfigure(index=0, weight=1)
-        self.mode_content_frame.columnconfigure(index=0, weight=1)
-
-        # WTF?!
+        
         # [TODO]:
         # - lock user on tab until a selection is made
         # - save selected mode
         # - dynamically add/configure columns if it makes sense
         # - calculate minwidth for 'Modus' based on longest 'display_name'
-        self.mode_select_mode_tre = ttk.Treeview(
-            master=self.mode_content_frame, columns=("description"),
-            selectmode="browse"
+        self.mode_select_mode_tre = self._build_mode_select_mode_tre(
+            parent=self.mode_tab_content_frame,
+            columns=self.mode_selection_columns
         )
-        self.mode_select_mode_tre.column(column="#0", stretch=tk.NO)
-        self.mode_select_mode_tre.column(column="description", anchor="w")
-        self.mode_select_mode_tre.heading(
-            column="#0", text=self.mode_selection_columns["#0"]
-        )
-        self.mode_select_mode_tre.heading(
-            column="description",
-            text=self.mode_selection_columns["description"]
-        )
-        for game in METADATA.games:
-            self.mode_select_mode_tre.insert(
-                parent="", index=tk.END, text=game.display_name,
-                values=(game.description,)
-            )
-        self.mode_select_mode_tre.grid(row=0, column=0, sticky="nsew")
 
         # --- mode tab: bottom bar --- #
 
@@ -233,6 +198,47 @@ class PregameWindow(Window):
             "<<TreeviewSelect>>", lambda e: self.handle_mode_selection()
         )
 
+    def _build_root(self, parent: ttk.Frame) -> ttk.Notebook:
+        root = ttk.Notebook(master=parent)
+        root.grid(row=0, column=0, sticky="nsew")
+        return root
+
+    def _build_mode_tab(self, parent: ttk.Notebook, text: str) -> ttk.Frame:
+        mode_tab = ttk.Frame(master=parent, padding=5)
+        mode_tab.rowconfigure(index=0, weight=1)
+        mode_tab.columnconfigure(index=0, weight=1)
+        parent.add(child=mode_tab, text=text)
+        return mode_tab
+
+    def _build_mode_tab_content_frame(self, parent: ttk.Frame) -> ttk.Frame:
+        mode_content_frame = ttk.Frame(master=parent, padding=5)
+        mode_content_frame.grid(row=0, column=0, sticky="nsew")
+        mode_content_frame.rowconfigure(index=0, weight=1)
+        mode_content_frame.columnconfigure(index=0, weight=1)
+        return mode_content_frame
+
+    def _build_mode_select_mode_tre(
+        self, parent: ttk.Frame, columns: dict[str, str]
+    ) -> ttk.Treeview:
+        mode_select_mode_tre = ttk.Treeview(
+            master=parent, columns=("description"), selectmode="browse"
+        )
+        mode_select_mode_tre.column(column="#0", stretch=tk.NO)
+        mode_select_mode_tre.column(column="description", anchor="w")
+        mode_select_mode_tre.heading(
+            column="#0", text=columns["#0"]
+        )
+        mode_select_mode_tre.heading(
+            column="description",
+            text=columns["description"]
+        )
+        for game in METADATA.games:
+            mode_select_mode_tre.insert(
+                parent="", index=tk.END, text=game.display_name,
+                values=(game.description,)
+            )
+        mode_select_mode_tre.grid(row=0, column=0, sticky="nsew")
+        return mode_select_mode_tre
 
     def start_game(self):
         print("Start!")
@@ -256,17 +262,3 @@ class PregameWindow(Window):
 
     def goto_overview_tab(self):
         self.root.select(tab_id=self.overview_tab)
-
-class GameWindow(Window):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class PostgameWindow(Window):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class Game():
-    def __init__(self):
-        pass

@@ -24,7 +24,6 @@ class App(tk.Tk):
     def _show_pregame_window(self):
         self.pregame_window.grid(row=0, column=0, sticky="nsew")
 
-
 class Window(ttk.Frame):
     def __init__(self, *args, enable_debugging: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,216 +48,261 @@ class Window(ttk.Frame):
                 
 
 class PregameWindow(Window):
+    """
+    tbc
+    """
+
+    # The following constants for displayed texts are
+    # defined here for now, because I don't how to properly
+    # achieve language selection within my application.
+
+    TEXTS = {
+        "mode_tab": {
+            "header": "Modus wählen",
+            "selection_columns": {
+                "#0": "Modus",
+                "description": "Beschreibung"
+            }
+        },
+        "players_tab": {
+            "header": "Spieler hinzufügen",
+            "label": "Bitte Spieler hinzufügen:"
+        },
+        "overview_tab": {
+            "header": "Spiel starten",
+            "label": "Du hast konfiguriert:"
+        }
+    }
+
     def __init__(self, *args, **kwargs):
-        # --- window --- #
         super().__init__(*args, padding=5, **kwargs)
+
         self.rowconfigure(index=0, weight=1)
         self.columnconfigure(index=0, weight=1)
 
-        # --- root notebook --- #
+        self.root: ttk.Notebook = None
+        self.mode_tab: ttk.Frame = None
+        self.mode_tab_content: ttk.Frame = None
+        self.mode_tab_selection: ttk.Treeview = None
+        self.mode_tab_bottom_bar: ttk.Frame = None
+        self.mode_tab_goto_players_tab: ttk.Button = None
+        self.players_tab: ttk.Frame = None
+        self.players_tab_content: ttk.Frame = None
+        self.players_tab_label: ttk.Label = None
+        self.players_tab_bottom_bar: ttk.Frame = None
+        self.players_tab_goto_mode_tab: ttk.Button = None
+        self.players_tab_goto_overview_tab: ttk.Button = None
+        self.overview_tab: ttk.Frame = None
+        self.overview_tab_content: ttk.Frame = None
+        self.overview_tab_label: ttk.Label = None
+        self.overview_tab_bottom_bar: ttk.Frame = None
+        self.overview_tab_goto_players_tab: ttk.Button = None
+        self.overview_tab_start_game: ttk.Button = None  
 
-        self.tab_texts = {
-            "mode": "Modus wählen",
-            "players": "Spieler hinzufügen",
-            "overview": "Spiel starten"
-        }
-
-        self.root = self._build_root(self)
-
-        # --- mode tab --- #
-
-        self.mode_tab = self._build_mode_tab(
-            parent=self.root, text=self.tab_texts["mode"]
-        )
-
-        self.mode_tab_content_frame = self._build_mode_tab_content_frame(
-            parent=self.mode_tab
-        )
-
-        self.mode_selection_columns = {
-            "#0": "Modus",
-            "description": "Beschreibung"
-        }
-        
-        # [TODO]:
-        # - lock user on tab until a selection is made
-        # - save selected mode
-        # - dynamically add/configure columns if it makes sense
-        # - calculate minwidth for 'Modus' based on longest 'display_name'
-        self.mode_select_mode_tre = self._build_mode_select_mode_tre(
-            parent=self.mode_tab_content_frame,
-            columns=self.mode_selection_columns
-        )
-
-        # --- mode tab: bottom bar --- #
-
-        self.mode_bottom_bar = ttk.Frame(master=self.mode_tab, padding=5)
-        self.mode_bottom_bar.grid(row=1, column=0, sticky="nsew")
-        self.mode_bottom_bar.rowconfigure(index=0, weight=1)
-        self.mode_bottom_bar.columnconfigure(index=0, weight=1)
-
-        self.goto_players_tab_btn = ttk.Button(
-            master=self.mode_bottom_bar, text=">>",
-            command=self.goto_players_tab
-        )
-        self.goto_players_tab_btn.grid(row=0, column=0, sticky="nse")
-
-        # --- players tab --- #
-
-        self.players_tab = ttk.Frame(master=self.root, padding=5)
-        self.players_tab.rowconfigure(index=0, weight=1)
-        self.players_tab.columnconfigure(index=0, weight=1)
-        self.root.add(child=self.players_tab, text=self.tab_texts["players"])
-
-        # --- players tab: content frame --- #
-
-        self.players_content_frame = ttk.Frame(
-            master=self.players_tab, padding=5
-        )
-        self.players_content_frame.grid(row=0, column=0, sticky="nsew")
-
-        self.players_add_players_lbl = ttk.Label(
-            master=self.players_content_frame, text="Bitte füge Spieler hinzu:"
-        )
-        self.players_add_players_lbl.grid(row=0, column=0)
-
-        # --- players tab: bottom bar --- #
-
-        self.players_bottom_bar = ttk.Frame(master=self.players_tab, padding=5)
-        self.players_bottom_bar.grid(row=1, column=0, sticky="nsew")
-        self.players_bottom_bar.rowconfigure(index=0, weight=1)
-        self.players_bottom_bar.columnconfigure(index=0, weight=1)
-        self.players_bottom_bar.columnconfigure(index=1, weight=1)
-
-        self.goto_mode_tab_btn = ttk.Button(
-            master=self.players_bottom_bar, text="<<",
-            command=self.goto_mode_tab
-        )
-        self.goto_mode_tab_btn.grid(row=0, column=0, sticky="nsw")
-
-        self.goto_overview_tab_btn = ttk.Button(
-            master=self.players_bottom_bar, text=">>",
-            command=self.goto_overview_tab
-        )
-        self.goto_overview_tab_btn.grid(row=0, column=1, sticky="nse")
-
-
-        # --- overview tab --- #
-
-        self.overview_tab = ttk.Frame(master=self.root, padding=5)
-        self.overview_tab.rowconfigure(index=0, weight=1)
-        self.overview_tab.columnconfigure(index=0, weight=1)
-        self.root.add(child=self.overview_tab, text=self.tab_texts["overview"])
-
-        # --- overview tab: content frame --- #
-
-        self.overview_content_frame = ttk.Frame(
-            master=self.overview_tab, padding=5
-        )
-        self.overview_content_frame.grid(row=0, column=0, sticky="nsew")
-
-        self.overview_add_overview_lbl = ttk.Label(
-            master=self.overview_content_frame, text="Du hast konfiguriert:"
-        )
-        self.overview_add_overview_lbl.grid(row=0, column=0)
-
-        # --- overview tab: bottom bar --- #
-
-        self.overview_bottom_bar = ttk.Frame(
-            master=self.overview_tab, padding=5
-        )
-        self.overview_bottom_bar.grid(row=1, column=0, sticky="nsew")
-        self.overview_bottom_bar.rowconfigure(index=0, weight=1)
-        self.overview_bottom_bar.columnconfigure(index=0, weight=1)
-        self.overview_bottom_bar.columnconfigure(index=1, weight=1)
-
-        self.goto_mode_tab_btn = ttk.Button(
-            master=self.overview_bottom_bar, text="<<",
-            command=self.goto_players_tab
-        )
-        self.goto_mode_tab_btn.grid(row=0, column=0, sticky="nsw")
-
-        self.goto_overview_tab_btn = ttk.Button(
-            master=self.overview_bottom_bar, text="Start!",
-            command=self.start_game
-        )
-        self.goto_overview_tab_btn.grid(row=0, column=1, sticky="nse")
-
-        # --- debug --- #
+        self._build_root(self)
+        self._configure_logic()
 
         if self.is_debugging_enabled:
             self.configure_debugging()
 
-        # --- logic --- #
+    def _build_root(self, parent: ttk.Frame):
+        self.root = ttk.Notebook(master=parent)
+        self.root.grid(row=0, column=0, sticky="nsew")
+        self._build_mode_tab(parent=self.root)
+        self._build_players_tab(parent=self.root)
+        self._build_overview_tab(parent=self.root)
 
-        self.root.hide(tab_id=self.players_tab)
-        self.root.hide(tab_id=self.overview_tab)
-        self.goto_players_tab_btn.state(["disabled"])
-        self.mode_select_mode_tre.bind(
-            "<<TreeviewSelect>>", lambda e: self.handle_mode_selection()
+    def _build_mode_tab(self, parent: ttk.Notebook):
+        text = PregameWindow.TEXTS["mode_tab"]["header"]
+        self.mode_tab = ttk.Frame(master=parent, padding=5)
+        self.mode_tab.rowconfigure(index=0, weight=1)
+        self.mode_tab.columnconfigure(index=0, weight=1)
+        parent.add(child=self.mode_tab, text=text)
+        self._build_mode_tab_content(parent=self.mode_tab)
+        self._build_mode_tab_bottom_bar(parent=self.mode_tab)
+
+    def _build_mode_tab_content(self, parent: ttk.Frame):
+        self.mode_tab_content = ttk.Frame(master=parent, padding=5)
+        self.mode_tab_content.grid(row=0, column=0, sticky="nsew")
+        self.mode_tab_content.rowconfigure(index=0, weight=1)
+        self.mode_tab_content.columnconfigure(index=0, weight=1)
+        self._build_mode_tab_selection(parent=self.mode_tab_content)
+
+    # [TODO]:
+    # - lock user on tab until a selection is made
+    # - save selected mode
+    # - dynamically add/configure columns if it makes sense
+    # - calculate minwidth for 'Modus' based on longest 'display_name'
+    def _build_mode_tab_selection(self, parent: ttk.Frame):
+        column_texts = PregameWindow.TEXTS["mode_tab"]["selection_columns"]
+        self.mode_tab_selection = ttk.Treeview(
+            master=parent, columns=["description"], selectmode="browse"
         )
-
-    def _build_root(self, parent: ttk.Frame) -> ttk.Notebook:
-        root = ttk.Notebook(master=parent)
-        root.grid(row=0, column=0, sticky="nsew")
-        return root
-
-    def _build_mode_tab(self, parent: ttk.Notebook, text: str) -> ttk.Frame:
-        mode_tab = ttk.Frame(master=parent, padding=5)
-        mode_tab.rowconfigure(index=0, weight=1)
-        mode_tab.columnconfigure(index=0, weight=1)
-        parent.add(child=mode_tab, text=text)
-        return mode_tab
-
-    def _build_mode_tab_content_frame(self, parent: ttk.Frame) -> ttk.Frame:
-        mode_content_frame = ttk.Frame(master=parent, padding=5)
-        mode_content_frame.grid(row=0, column=0, sticky="nsew")
-        mode_content_frame.rowconfigure(index=0, weight=1)
-        mode_content_frame.columnconfigure(index=0, weight=1)
-        return mode_content_frame
-
-    def _build_mode_select_mode_tre(
-        self, parent: ttk.Frame, columns: dict[str, str]
-    ) -> ttk.Treeview:
-        mode_select_mode_tre = ttk.Treeview(
-            master=parent, columns=("description"), selectmode="browse"
-        )
-        mode_select_mode_tre.column(column="#0", stretch=tk.NO)
-        mode_select_mode_tre.column(column="description", anchor="w")
-        mode_select_mode_tre.heading(
-            column="#0", text=columns["#0"]
-        )
-        mode_select_mode_tre.heading(
-            column="description",
-            text=columns["description"]
+        self.mode_tab_selection.grid(row=0, column=0, sticky="nsew")
+        self.mode_tab_selection.column(column="#0", stretch=tk.NO)
+        self.mode_tab_selection.column(column="description", anchor="w")
+        self.mode_tab_selection.heading(column="#0", text=column_texts["#0"])
+        self.mode_tab_selection.heading(
+            column="description", text=column_texts["description"]
         )
         for game in METADATA.games:
-            mode_select_mode_tre.insert(
+            self.mode_tab_selection.insert(
                 parent="", index=tk.END, text=game.display_name,
                 values=(game.description,)
             )
-        mode_select_mode_tre.grid(row=0, column=0, sticky="nsew")
-        return mode_select_mode_tre
+    
+    def _build_mode_tab_bottom_bar(self, parent: ttk.Frame):
+        self.mode_tab_bottom_bar = ttk.Frame(master=parent, padding=5)
+        self.mode_tab_bottom_bar.grid(row=1, column=0, sticky="nsew")
+        self.mode_tab_bottom_bar.rowconfigure(index=0, weight=1)
+        self.mode_tab_bottom_bar.columnconfigure(index=0, weight=1)
+        self._build_mode_tab_goto_players_tab(parent=self.mode_tab_bottom_bar)
 
-    def start_game(self):
-        print("Start!")
+    def _build_mode_tab_goto_players_tab(self, parent: ttk.Frame):
+        self.mode_tab_goto_players_tab = ttk.Button(master=parent, text=">>")
+        self.mode_tab_goto_players_tab.grid(row=0, column=0, sticky="nse")
+    
+    def _build_players_tab(self, parent: ttk.Notebook):
+        text = PregameWindow.TEXTS["players_tab"]["header"]
+        self.players_tab = ttk.Frame(master=parent, padding=5)
+        self.players_tab.rowconfigure(index=0, weight=1)
+        self.players_tab.columnconfigure(index=0, weight=1)
+        parent.add(child=self.players_tab, text=text)
+        self._build_players_tab_content(parent=self.players_tab)
+        self._build_players_tab_bottom_bar(parent=self.players_tab)
 
-    def handle_mode_selection(self):
-        self.enable_players_tab()
-        self.enable_overview_tab()
+    def _build_players_tab_content(self, parent: ttk.Frame):
+        self.players_tab_content = ttk.Frame(master=parent, padding=5)
+        self.players_tab_content.grid(row=0, column=0, sticky="nsew")
+        self._build_players_tab_label(parent=self.players_tab_content)
 
-    def enable_players_tab(self):
-        self.root.add(child=self.players_tab)
-        self.goto_players_tab_btn.state(["!disabled"])
+    def _build_players_tab_label(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players_tab"]["label"]
+        self.players_tab_label = ttk.Label(master=parent, text=text)
+        self.players_tab_label.grid(row=0, column=0)
 
-    def enable_overview_tab(self):
-        self.root.add(child=self.overview_tab)
+    def _build_players_tab_bottom_bar(self, parent: ttk.Frame):
+        self.players_tab_bottom_bar = ttk.Frame(master=parent, padding=5)
+        self.players_tab_bottom_bar.grid(row=1, column=0, sticky="nsew")
+        self.players_tab_bottom_bar.rowconfigure(index=0, weight=1)
+        self.players_tab_bottom_bar.columnconfigure(index=0, weight=1)
+        self.players_tab_bottom_bar.columnconfigure(index=1, weight=1)
+        self._build_players_tab_goto_mode_tab(
+            parent=self.players_tab_bottom_bar
+        )
+        self._build_players_tab_goto_overview_tab(
+            parent=self.players_tab_bottom_bar
+        )
 
-    def goto_mode_tab(self):
+    def _build_players_tab_goto_mode_tab(self, parent: ttk.Frame):
+        self.players_tab_goto_mode_tab = ttk.Button(master=parent, text="<<")
+        self.players_tab_goto_mode_tab.grid(row=0, column=0, sticky="nsw")
+
+    def _build_players_tab_goto_overview_tab(self, parent: ttk.Frame):
+        self.players_tab_goto_overview_tab = ttk.Button(
+            master=parent, text=">>"
+        )
+        self.players_tab_goto_overview_tab.grid(row=0, column=1, sticky="nse")
+
+    def _build_overview_tab(self, parent: ttk.Notebook):
+        text = PregameWindow.TEXTS["overview_tab"]["header"]
+        self.overview_tab = ttk.Frame(master=parent, padding=5)
+        self.overview_tab.rowconfigure(index=0, weight=1)
+        self.overview_tab.columnconfigure(index=0, weight=1)
+        parent.add(child=self.overview_tab, text=text)
+        self._build_overview_tab_content(parent=self.overview_tab)
+        self._build_overview_tab_bottom_bar(parent=self.overview_tab)
+
+    def _build_overview_tab_content(self, parent: ttk.Frame):
+        self.overview_tab_content = ttk.Frame(master=parent, padding=5)
+        self.overview_tab_content.grid(row=0, column=0, sticky="nsew")
+        self._build_overview_tab_label(parent=self.overview_tab_content)
+
+    def _build_overview_tab_label(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["overview_tab"]["label"]
+        self.overview_tab_label = ttk.Label(master=parent, text=text)
+        self.overview_tab_label.grid(row=0, column=0)
+
+    def _build_overview_tab_bottom_bar(self, parent: ttk.Frame):
+        self.overview_tab_bottom_bar = ttk.Frame(master=parent, padding=5)
+        self.overview_tab_bottom_bar.grid(row=1, column=0, sticky="nsew")
+        self.overview_tab_bottom_bar.rowconfigure(index=0, weight=1)
+        self.overview_tab_bottom_bar.columnconfigure(index=0, weight=1)
+        self.overview_tab_bottom_bar.columnconfigure(index=1, weight=1)
+        self._build_overview_tab_goto_players_tab(
+            parent=self.overview_tab_bottom_bar
+        )
+        self._build_overview_tab_start_game(
+            parent=self.overview_tab_bottom_bar
+        )
+
+    def _build_overview_tab_goto_players_tab(self, parent: ttk.Frame):
+        self.overview_tab_goto_players_tab = ttk.Button(
+            master=parent, text="<<"
+        )
+        self.overview_tab_goto_players_tab.grid(row=0, column=0, sticky="nsw")
+
+    def _build_overview_tab_start_game(self, parent: ttk.Frame):
+        self.overview_tab_start_game = ttk.Button(master=parent, text="Start!")
+        self.overview_tab_start_game.grid(row=0, column=1, sticky="nse")
+
+    def _configure_logic(self):
+        self.mode_tab_goto_players_tab.configure(
+            command=self._handle_mode_tab_goto_players_tab
+        )
+        self.players_tab_goto_mode_tab.configure(
+            command=self._handle_players_tab_goto_mode_tab
+        )
+        self.players_tab_goto_overview_tab.configure(
+            command=self._handle_players_tab_goto_overview_tab
+        )
+        self.overview_tab_goto_players_tab.configure(
+            command=self._handle_overview_tab_goto_players_tab
+        )
+        self.overview_tab_start_game.configure(
+            command=self._handle_overview_tab_start_game
+        )
+        self.root.hide(tab_id=self.players_tab)
+        self.root.hide(tab_id=self.overview_tab)
+        self.mode_tab_goto_players_tab.state(["disabled"])
+        self.mode_tab_selection.bind(
+            "<<TreeviewSelect>>", lambda e: self._handle_mode_tab_selection()
+        )
+
+    def _handle_mode_tab_goto_players_tab(self):
+        self._goto_players_tab()
+
+    def _handle_players_tab_goto_mode_tab(self):
+        self._goto_mode_tab()
+
+    def _handle_players_tab_goto_overview_tab(self):
+        self._goto_overview_tab()
+
+    def _handle_overview_tab_goto_players_tab(self):
+        self._goto_players_tab()
+
+    def _handle_overview_tab_start_game(self):
+        self._start_game()
+
+    def _goto_mode_tab(self):
         self.root.select(tab_id=self.mode_tab)
 
-    def goto_players_tab(self):
+    def _goto_players_tab(self):
         self.root.select(tab_id=self.players_tab)
 
-    def goto_overview_tab(self):
+    def _goto_overview_tab(self):
         self.root.select(tab_id=self.overview_tab)
+
+    def _start_game(self):
+        print("Start!")
+
+    def _handle_mode_tab_selection(self):
+        self._enable_players_tab()
+        self._enable_overview_tab()
+
+    def _enable_players_tab(self):
+        self.root.add(child=self.players_tab)
+        self.mode_tab_goto_players_tab.state(["!disabled"])
+
+    def _enable_overview_tab(self):
+        self.root.add(child=self.overview_tab)

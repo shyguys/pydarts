@@ -8,14 +8,14 @@ from modules.games import METADATA
 class App(tk.Tk):
     def __init__(self, enable_debugging: bool = False):
         super().__init__()
-        self._configure_self()
+        self._build()
 
         self.pregame_window = PregameWindow(
             master=self, enable_debugging=enable_debugging
         )
         self._show_pregame_window()
 
-    def _configure_self(self):
+    def _build(self):
         self.title(string="PyDarts")
         self.minsize(width=800, height=600)
         self.rowconfigure(index=0, weight=1)
@@ -77,9 +77,6 @@ class PregameWindow(Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, padding=5, **kwargs)
 
-        self.rowconfigure(index=0, weight=1)
-        self.columnconfigure(index=0, weight=1)
-
         self.root: ttk.Notebook = None
         self.mode_tab: ttk.Frame = None
         self.mode_tab_content: ttk.Frame = None
@@ -99,11 +96,16 @@ class PregameWindow(Window):
         self.overview_tab_goto_players_tab: ttk.Button = None
         self.overview_tab_start_game: ttk.Button = None  
 
-        self._build_root(self)
-        self._configure_logic()
+        self._build()
+        self._configure()
 
         if self.is_debugging_enabled:
             self.configure_debugging()
+
+    def _build(self):
+            self.rowconfigure(index=0, weight=1)
+            self.columnconfigure(index=0, weight=1)
+            self._build_root(self)
 
     def _build_root(self, parent: ttk.Frame):
         self.root = ttk.Notebook(master=parent)
@@ -129,10 +131,8 @@ class PregameWindow(Window):
         self._build_mode_tab_selection(parent=self.mode_tab_content)
 
     # [TODO]:
-    # - lock user on tab until a selection is made
-    # - save selected mode
     # - dynamically add/configure columns if it makes sense
-    # - calculate minwidth for 'Modus' based on longest 'display_name'
+    # - calculate minwidth for '#0' based on longest 'display_name'
     def _build_mode_tab_selection(self, parent: ttk.Frame):
         column_texts = PregameWindow.TEXTS["mode_tab"]["selection_columns"]
         self.mode_tab_selection = ttk.Treeview(
@@ -246,27 +246,37 @@ class PregameWindow(Window):
         self.overview_tab_start_game = ttk.Button(master=parent, text="Start!")
         self.overview_tab_start_game.grid(row=0, column=1, sticky="nse")
 
-    def _configure_logic(self):
+    def _configure(self):
+        self._configure_mode_tab()
+        self._configure_players_tab()
+        self._configure_overview_tab()
+    
+    def _configure_mode_tab(self):
+        self.mode_tab_goto_players_tab.state(["disabled"])
         self.mode_tab_goto_players_tab.configure(
             command=self._handle_mode_tab_goto_players_tab
         )
+        self.mode_tab_selection.bind(
+            "<<TreeviewSelect>>", lambda e: self._handle_mode_tab_selection()
+        )
+
+    def _configure_players_tab(self):
+        self.root.hide(tab_id=self.players_tab)
+        self.players_tab_goto_overview_tab.state(["disabled"])
         self.players_tab_goto_mode_tab.configure(
             command=self._handle_players_tab_goto_mode_tab
         )
         self.players_tab_goto_overview_tab.configure(
             command=self._handle_players_tab_goto_overview_tab
         )
+
+    def _configure_overview_tab(self):
+        self.root.hide(tab_id=self.overview_tab)
         self.overview_tab_goto_players_tab.configure(
             command=self._handle_overview_tab_goto_players_tab
         )
         self.overview_tab_start_game.configure(
             command=self._handle_overview_tab_start_game
-        )
-        self.root.hide(tab_id=self.players_tab)
-        self.root.hide(tab_id=self.overview_tab)
-        self.mode_tab_goto_players_tab.state(["disabled"])
-        self.mode_tab_selection.bind(
-            "<<TreeviewSelect>>", lambda e: self._handle_mode_tab_selection()
         )
 
     def _handle_mode_tab_goto_players_tab(self):
@@ -297,12 +307,10 @@ class PregameWindow(Window):
         print("Start!")
 
     def _handle_mode_tab_selection(self):
-        self._enable_players_tab()
-        self._enable_overview_tab()
-
-    def _enable_players_tab(self):
         self.root.add(child=self.players_tab)
         self.mode_tab_goto_players_tab.state(["!disabled"])
 
-    def _enable_overview_tab(self):
+    # [TODO]
+    def _handle_players_tab_done(self):
         self.root.add(child=self.overview_tab)
+        self.players_tab_goto_overview_tab.state(["!disabled"])

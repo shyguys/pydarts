@@ -17,7 +17,7 @@ class App(tk.Tk):
 
     def _build(self):
         self.title(string="PyDarts")
-        self.minsize(width=800, height=600)
+        self.minsize(width=600, height=600)
         self.rowconfigure(index=0, weight=1)
         self.columnconfigure(index=0, weight=1)
 
@@ -57,41 +57,70 @@ class PregameWindow(Window):
     # achieve language selection within my application.
 
     TEXTS = {
-        "mode_tab": {
-            "header": "Modus wählen",
+        "mode": {
+            "title": "Modus wählen",
             "selection_columns": {
                 "#0": "Modus",
                 "description": "Beschreibung"
-            }
+            },
+            "goto_players_tab": ">>"
         },
-        "players_tab": {
-            "header": "Spieler hinzufügen",
-            "label": "Bitte Spieler hinzufügen:"
+        "players": {
+            "title": "Spieler hinzufügen",
+            "prompt": {
+                "label": "Gib einen Namen ein:",
+                "entry": "",
+                "button": "Hinzufügen"
+            },
+            "goto_mode_tab": "<<",
+            "goto_overview_tab": ">>"
         },
-        "overview_tab": {
-            "header": "Spiel starten",
-            "label": "Du hast konfiguriert:"
+        "overview": {
+            "title": "Spiel starten",
+            "label": "Du hast konfiguriert:",
+            "goto_players_tab": "<<",
+            "start_game": "Start!"
         }
     }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, padding=5, **kwargs)
 
+        # --- root --- #
+
         self.root: ttk.Notebook = None
+
+        # --- mode_tab --- #
+
         self.mode_tab: ttk.Frame = None
+
         self.mode_tab_content: ttk.Frame = None
         self.mode_tab_selection: ttk.Treeview = None
+
         self.mode_tab_bottom_bar: ttk.Frame = None
         self.mode_tab_goto_players_tab: ttk.Button = None
+
+        # --- players_tab --- #
+
         self.players_tab: ttk.Frame = None
+
         self.players_tab_content: ttk.Frame = None
-        self.players_tab_label: ttk.Label = None
+        self.players_tab_prompt: ttk.Frame = None
+        self.players_tab_prompt_label: ttk.Label = None
+        self.players_tab_prompt_entry: ttk.Entry = None
+        self.players_tab_prompt_add: ttk.Button = None
+
         self.players_tab_bottom_bar: ttk.Frame = None
         self.players_tab_goto_mode_tab: ttk.Button = None
         self.players_tab_goto_overview_tab: ttk.Button = None
+
+        # --- overview_tab --- #
+
         self.overview_tab: ttk.Frame = None
+
         self.overview_tab_content: ttk.Frame = None
         self.overview_tab_label: ttk.Label = None
+
         self.overview_tab_bottom_bar: ttk.Frame = None
         self.overview_tab_goto_players_tab: ttk.Button = None
         self.overview_tab_start_game: ttk.Button = None  
@@ -115,7 +144,7 @@ class PregameWindow(Window):
         self._build_overview_tab(parent=self.root)
 
     def _build_mode_tab(self, parent: ttk.Notebook):
-        text = PregameWindow.TEXTS["mode_tab"]["header"]
+        text = PregameWindow.TEXTS["mode"]["title"]
         self.mode_tab = ttk.Frame(master=parent, padding=5)
         self.mode_tab.rowconfigure(index=0, weight=1)
         self.mode_tab.columnconfigure(index=0, weight=1)
@@ -134,7 +163,7 @@ class PregameWindow(Window):
     # - dynamically add/configure columns if it makes sense
     # - calculate minwidth for '#0' based on longest 'display_name'
     def _build_mode_tab_selection(self, parent: ttk.Frame):
-        column_texts = PregameWindow.TEXTS["mode_tab"]["selection_columns"]
+        column_texts = PregameWindow.TEXTS["mode"]["selection_columns"]
         self.mode_tab_selection = ttk.Treeview(
             master=parent, columns=["description"], selectmode="browse"
         )
@@ -163,7 +192,7 @@ class PregameWindow(Window):
         self.mode_tab_goto_players_tab.grid(row=0, column=0, sticky="nse")
     
     def _build_players_tab(self, parent: ttk.Notebook):
-        text = PregameWindow.TEXTS["players_tab"]["header"]
+        text = PregameWindow.TEXTS["players"]["title"]
         self.players_tab = ttk.Frame(master=parent, padding=5)
         self.players_tab.rowconfigure(index=0, weight=1)
         self.players_tab.columnconfigure(index=0, weight=1)
@@ -174,12 +203,38 @@ class PregameWindow(Window):
     def _build_players_tab_content(self, parent: ttk.Frame):
         self.players_tab_content = ttk.Frame(master=parent, padding=5)
         self.players_tab_content.grid(row=0, column=0, sticky="nsew")
-        self._build_players_tab_label(parent=self.players_tab_content)
+        self.players_tab_content.columnconfigure(index=0, weight=1)
+        self.players_tab_content.rowconfigure(index=1, weight=1)
+        self._build_players_tab_prompt(parent=self.players_tab_content)
+        # self._build_players_tab_players_list(parent=self.players_tab_content)
+        # self._build_players_tab_list_controls(parent=self.players_tab_content)
+    
+    def _build_players_tab_prompt(self, parent: ttk.Frame):
+        self.players_tab_prompt = ttk.Frame(master=parent, padding=5)
+        self.players_tab_prompt.grid(row=0, column=0, sticky="nsew")
+        self.players_tab_prompt.rowconfigure(index=0, weight=1)
+        self.players_tab_prompt.columnconfigure(index=0, weight=1)
+        self.players_tab_prompt.columnconfigure(index=1, weight=2)
+        self.players_tab_prompt.columnconfigure(index=2, weight=1)
+        self._build_players_tab_prompt_label(parent=self.players_tab_prompt)
+        self._build_players_tab_prompt_entry(parent=self.players_tab_prompt)
+        self._build_players_tab_prompt_add(parent=self.players_tab_prompt)
+    
+    def _build_players_tab_prompt_label(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["prompt"]["label"]
+        self.players_tab_prompt_label = ttk.Label(master=parent, text=text)
+        self.players_tab_prompt_label.grid(row=0, column=0, sticky="nse")
 
-    def _build_players_tab_label(self, parent: ttk.Frame):
-        text = PregameWindow.TEXTS["players_tab"]["label"]
-        self.players_tab_label = ttk.Label(master=parent, text=text)
-        self.players_tab_label.grid(row=0, column=0)
+    def _build_players_tab_prompt_entry(self, parent: ttk.Frame):
+        self.players_tab_prompt_entry = ttk.Entry(master=parent)
+        self.players_tab_prompt_entry.grid(
+            row=0, column=1, sticky="nsew", padx=5
+        )
+
+    def _build_players_tab_prompt_add(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["prompt"]["button"]
+        self.players_tab_prompt_add = ttk.Button(master=parent, text=text)
+        self.players_tab_prompt_add.grid(row=0, column=2, sticky="nsw")
 
     def _build_players_tab_bottom_bar(self, parent: ttk.Frame):
         self.players_tab_bottom_bar = ttk.Frame(master=parent, padding=5)
@@ -195,17 +250,19 @@ class PregameWindow(Window):
         )
 
     def _build_players_tab_goto_mode_tab(self, parent: ttk.Frame):
-        self.players_tab_goto_mode_tab = ttk.Button(master=parent, text="<<")
+        text = PregameWindow.TEXTS["players"]["goto_mode_tab"]
+        self.players_tab_goto_mode_tab = ttk.Button(master=parent, text=text)
         self.players_tab_goto_mode_tab.grid(row=0, column=0, sticky="nsw")
 
     def _build_players_tab_goto_overview_tab(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["goto_overview_tab"]
         self.players_tab_goto_overview_tab = ttk.Button(
-            master=parent, text=">>"
+            master=parent, text=text
         )
         self.players_tab_goto_overview_tab.grid(row=0, column=1, sticky="nse")
 
     def _build_overview_tab(self, parent: ttk.Notebook):
-        text = PregameWindow.TEXTS["overview_tab"]["header"]
+        text = PregameWindow.TEXTS["overview"]["title"]
         self.overview_tab = ttk.Frame(master=parent, padding=5)
         self.overview_tab.rowconfigure(index=0, weight=1)
         self.overview_tab.columnconfigure(index=0, weight=1)
@@ -219,7 +276,7 @@ class PregameWindow(Window):
         self._build_overview_tab_label(parent=self.overview_tab_content)
 
     def _build_overview_tab_label(self, parent: ttk.Frame):
-        text = PregameWindow.TEXTS["overview_tab"]["label"]
+        text = PregameWindow.TEXTS["overview"]["label"]
         self.overview_tab_label = ttk.Label(master=parent, text=text)
         self.overview_tab_label.grid(row=0, column=0)
 
@@ -237,13 +294,15 @@ class PregameWindow(Window):
         )
 
     def _build_overview_tab_goto_players_tab(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["overview"]["goto_players_tab"]
         self.overview_tab_goto_players_tab = ttk.Button(
-            master=parent, text="<<"
+            master=parent, text=text
         )
         self.overview_tab_goto_players_tab.grid(row=0, column=0, sticky="nsw")
 
     def _build_overview_tab_start_game(self, parent: ttk.Frame):
-        self.overview_tab_start_game = ttk.Button(master=parent, text="Start!")
+        text = PregameWindow.TEXTS["overview"]["start_game"]
+        self.overview_tab_start_game = ttk.Button(master=parent, text=text)
         self.overview_tab_start_game.grid(row=0, column=1, sticky="nse")
 
     def _configure(self):
@@ -263,6 +322,10 @@ class PregameWindow(Window):
     def _configure_players_tab(self):
         self.root.hide(tab_id=self.players_tab)
         self.players_tab_goto_overview_tab.state(["disabled"])
+        # [TODO]: bind correct command
+        self.players_tab_prompt_add.configure(
+            command=self._handle_players_tab_done
+        )
         self.players_tab_goto_mode_tab.configure(
             command=self._handle_players_tab_goto_mode_tab
         )
@@ -310,7 +373,7 @@ class PregameWindow(Window):
         self.root.add(child=self.players_tab)
         self.mode_tab_goto_players_tab.state(["!disabled"])
 
-    # [TODO]
+    # [TODO]: verify if this is correct
     def _handle_players_tab_done(self):
         self.root.add(child=self.overview_tab)
         self.players_tab_goto_overview_tab.state(["!disabled"])

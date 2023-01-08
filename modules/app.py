@@ -1,75 +1,57 @@
 import logging
 import tkinter as tk
 import tkinter.ttk as ttk
-from typing import Generator
 
 import modules.tkhelper as tkh
 from modules.games import METADATA
 
 
-class UnhandledEventError(Exception):
-    def __init__(self, event: tk.Event, widget: tk.Widget):
-        super().__init__(
-            f"event in widget not handled:\n"
-            f"  event: {event!r}\n"
-            f"  widget: {widget!r}\n"
-        )
-
-
 class App(tk.Tk):
     def __init__(self, enable_debugging: bool = False):
         super().__init__()
-        self._build()
-        self._configure()
+        self._build_self()
 
-        self.pregame_window: PregameWindow = PregameWindow(
-            master=self, enable_debugging=enable_debugging
-        )
+        self.pregame_window = PregameWindow(master=self)
+
+        if enable_debugging:
+            self._configure_debugging()
         self._show_pregame_window()
 
-    def _build(self):
+    def _build_self(self):
         self.title(string="PyDarts")
         self.minsize(width=600, height=600)
         self.rowconfigure(index=0, weight=1)
         self.columnconfigure(index=0, weight=1)
 
-    def _configure(self):
-        self.bind_all("<KeyRelease-Up>", self._handle_key_up)
-        ...
+    def _configure_debugging(self):
+        self._border_children()
+        for sequence in ["<KeyRelease>"]:
+            self._catch_event(sequence)            
 
-    def _handle_key_up(self, event: tk.Event = None) -> None:
-        widget: tk.Widget = self.focus_get()
-        for window in [self.pregame_window]:
-            if window.is_parent_of(widget):
-                print("UP in pregame_window")
-                return None
-        raise UnhandledEventError(event, widget)
-
-    def _show_pregame_window(self):
-        self.pregame_window.grid(row=0, column=0, sticky="nsew")
-
-class Window(ttk.Frame):
-    def __init__(self, *args, enable_debugging: bool = False, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.is_debugging_enabled = enable_debugging
-
-    def walk_children(self) -> Generator[tk.Widget, None, None]:
-        yield from tkh.walk_children(self)
-    
-    def is_parent_of(self, widget: tk.Widget) -> bool:
-        return tkh.is_parent_of(self, widget)
-
-    def configure_debugging(self):
-        for widget in self.walk_children():
+    def _border_children(self):
+        for widget in tkh.walk_children(self):
             try:
-                # [TODO]: highlight additional way?
                 widget.configure(borderwidth=1, relief="solid")
             except tk.TclError:
                 # Widget has no 'borderwidth' option
                 logging.warning(f"widget cannot be bordered: {widget!r}")
+
+    def _catch_event(self, sequence: str):
+        self.bind
+        self.bind_all(sequence=sequence, add=True, func=self._handle_event)
+
+    def _handle_event(self, event: tk.Event = None):
+        logging.info(
+            f"application caught event:\n"
+            f"  event: {event!r}\n"
+            f"  widget: {event.widget!r}"
+        )
+
+    def _show_pregame_window(self):
+        self.pregame_window.grid(row=0, column=0, sticky="nsew")
                 
 
-class PregameWindow(Window):
+class PregameWindow(ttk.Frame):
     """
     tbc
     """
@@ -169,13 +151,10 @@ class PregameWindow(Window):
         self.overview_tab_goto_players_tab: ttk.Button = None
         self.overview_tab_start_game: ttk.Button = None  
 
-        self._build()
-        self._configure()
+        self._build_self()
+        self._configure_self()
 
-        if self.is_debugging_enabled:
-            self.configure_debugging()
-
-    def _build(self):
+    def _build_self(self):
             self.rowconfigure(index=0, weight=1)
             self.columnconfigure(index=0, weight=1)
             self._build_root(self)
@@ -436,7 +415,7 @@ class PregameWindow(Window):
         self.overview_tab_start_game = ttk.Button(master=parent, text=text)
         self.overview_tab_start_game.grid(row=0, column=1, sticky="nse")
 
-    def _configure(self):
+    def _configure_self(self):
         self.root.bind("<<NotebookTabChanged>>", lambda e: self._handle_root())
         self._configure_mode_tab()
         self._configure_players_tab()
@@ -453,8 +432,6 @@ class PregameWindow(Window):
         self.mode_tab_selection.bind(
             "<<TreeviewSelect>>", lambda e: self._handle_mode_tab_selection()
         )
-        self.mode_tab_selection.bind("<Key-Up>", lambda e: self._handle_mode_tab())
-        self.mode_tab_selection.bind("<Key-Down>", lambda e: self._handle_mode_tab())
 
     def _configure_mode_tab_bottom_bar(self):
         self._configure_mode_tab_goto_players_tab()
@@ -487,14 +464,6 @@ class PregameWindow(Window):
         #     "<Key-Return>",
         #     lambda e: self._handle_players_tab_prompt_entry_return()
         # )
-        self.players_tab_prompt_entry.bind(
-            "<Key-Up>",
-            lambda e: self._handle_players_tab_prompt_entry_up()
-        )
-        self.players_tab_prompt_entry.bind_all(
-            "<Key-Down>",
-            lambda e: self._handle_players_tab_prompt_entry_down()
-        )
 
     def _configure_players_tab_prompt_add(self):
         self.players_tab_prompt_add.configure(

@@ -2,9 +2,9 @@ import tkinter as tk
 from typing import Generator
 
 def walk_children(widget: tk.Widget) -> Generator[tk.Widget, None, None]:
-    children: list[tk.Widget] = widget.winfo_children()
+    children = widget.winfo_children()
     while children:
-        child: tk.Widget = children.pop()
+        child = children.pop()
         yield child
         for grandchild in reversed(child.winfo_children()):
             children.append(grandchild)

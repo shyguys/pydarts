@@ -52,10 +52,10 @@ class PregameWindow(Window):
     tbc
     """
 
-    # The following constants for displayed texts are
-    # defined here for now, because I don't how to properly
-    # achieve language selection within my application.
+    # Temporary, to be defined somewhere/-how else once I know a better way.
+    PLAYER_LIMIT = 8
 
+    # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {
         "mode": {
             "title": "Modus wählen",
@@ -63,7 +63,7 @@ class PregameWindow(Window):
                 "#0": "Modus",
                 "description": "Beschreibung"
             },
-            "goto_players_tab": ">>"
+            "goto_players_tab": "Weiter >"
         },
         "players": {
             "title": "Spieler hinzufügen",
@@ -72,13 +72,24 @@ class PregameWindow(Window):
                 "entry": "",
                 "button": "Hinzufügen"
             },
-            "goto_mode_tab": "<<",
-            "goto_overview_tab": ">>"
+            "view_columns": {
+                "#0": "Position",
+                "player": "Spieler"
+            },
+            "controls": {
+                "move_top": "⊼",
+                "move_up": "∧",
+                "move_down": "∨",
+                "move_bottom": "⊻",
+                "delete": "Löschen"
+            },
+            "goto_mode_tab": "< Zurück",
+            "goto_overview_tab": "Weiter >"
         },
         "overview": {
             "title": "Spiel starten",
             "label": "Du hast konfiguriert:",
-            "goto_players_tab": "<<",
+            "goto_players_tab": "< Zurück",
             "start_game": "Start!"
         }
     }
@@ -92,6 +103,7 @@ class PregameWindow(Window):
 
         # --- mode_tab --- #
 
+        self.mode: str = None
         self.mode_tab: ttk.Frame = None
 
         self.mode_tab_content: ttk.Frame = None
@@ -102,6 +114,8 @@ class PregameWindow(Window):
 
         # --- players_tab --- #
 
+        self.player_to_add: tk.StringVar = tk.StringVar()
+        self.players: list[str] = []
         self.players_tab: ttk.Frame = None
 
         self.players_tab_content: ttk.Frame = None
@@ -109,6 +123,14 @@ class PregameWindow(Window):
         self.players_tab_prompt_label: ttk.Label = None
         self.players_tab_prompt_entry: ttk.Entry = None
         self.players_tab_prompt_add: ttk.Button = None
+        self.players_tab_players: ttk.Frame = None
+        self.players_tab_players_view: ttk.Treeview = None
+        self.players_tab_controls: ttk.Frame = None
+        self.players_tab_controls_move_top: ttk.Button = None
+        self.players_tab_controls_move_up: ttk.Button = None
+        self.players_tab_controls_move_down: ttk.Button = None
+        self.players_tab_controls_move_bottom: ttk.Button = None
+        self.players_tab_controls_delete: ttk.Button = None
 
         self.players_tab_bottom_bar: ttk.Frame = None
         self.players_tab_goto_mode_tab: ttk.Button = None
@@ -188,7 +210,8 @@ class PregameWindow(Window):
         self._build_mode_tab_goto_players_tab(parent=self.mode_tab_bottom_bar)
 
     def _build_mode_tab_goto_players_tab(self, parent: ttk.Frame):
-        self.mode_tab_goto_players_tab = ttk.Button(master=parent, text=">>")
+        text = PregameWindow.TEXTS["mode"]["goto_players_tab"]
+        self.mode_tab_goto_players_tab = ttk.Button(master=parent, text=text)
         self.mode_tab_goto_players_tab.grid(row=0, column=0, sticky="nse")
     
     def _build_players_tab(self, parent: ttk.Notebook):
@@ -201,13 +224,13 @@ class PregameWindow(Window):
         self._build_players_tab_bottom_bar(parent=self.players_tab)
 
     def _build_players_tab_content(self, parent: ttk.Frame):
-        self.players_tab_content = ttk.Frame(master=parent, padding=5)
+        self.players_tab_content = ttk.Frame(master=parent)
         self.players_tab_content.grid(row=0, column=0, sticky="nsew")
         self.players_tab_content.columnconfigure(index=0, weight=1)
         self.players_tab_content.rowconfigure(index=1, weight=1)
         self._build_players_tab_prompt(parent=self.players_tab_content)
-        # self._build_players_tab_players_list(parent=self.players_tab_content)
-        # self._build_players_tab_list_controls(parent=self.players_tab_content)
+        self._build_players_tab_players(parent=self.players_tab_content)
+        self._build_players_tab_controls(parent=self.players_tab_content)
     
     def _build_players_tab_prompt(self, parent: ttk.Frame):
         self.players_tab_prompt = ttk.Frame(master=parent, padding=5)
@@ -235,6 +258,92 @@ class PregameWindow(Window):
         text = PregameWindow.TEXTS["players"]["prompt"]["button"]
         self.players_tab_prompt_add = ttk.Button(master=parent, text=text)
         self.players_tab_prompt_add.grid(row=0, column=2, sticky="nsw")
+
+    def _build_players_tab_players(self, parent: ttk.Frame):
+        self.players_tab_players = ttk.Frame(master=parent, padding=5)
+        self.players_tab_players.grid(row=1, column=0, sticky="nsew")
+        self.players_tab_players.rowconfigure(index=0, weight=1)
+        self.players_tab_players.columnconfigure(index=0, weight=1)
+        self._build_players_tab_players_view(parent=self.players_tab_players)
+    
+    def _build_players_tab_players_view(self, parent: ttk.Frame):
+        column_texts = PregameWindow.TEXTS["players"]["view_columns"]
+        self.players_tab_players_view = ttk.Treeview(
+            master=parent, columns=["player"], selectmode="browse"
+        )
+        self.players_tab_players_view.grid(row=0, column=0, sticky="nsew")
+        self.players_tab_players_view.column(column="#0", stretch=tk.NO)
+        self.players_tab_players_view.column(column="player", anchor="w")
+        self.players_tab_players_view.heading(
+            column="#0", text=column_texts["#0"]
+        )
+        self.players_tab_players_view.heading(
+            column="player", text=column_texts["player"]
+        )
+
+    def _build_players_tab_controls(self, parent: ttk.Frame):
+        self.players_tab_controls = ttk.Frame(master=parent, padding=5)
+        self.players_tab_controls.grid(row=2, column=0, sticky="nsew")
+        self.players_tab_controls.rowconfigure(index=0, weight=1)
+        self.players_tab_controls.columnconfigure(index=0, weight=1)
+        self.players_tab_controls.columnconfigure(index=1, weight=1)
+        self.players_tab_controls.columnconfigure(index=2, weight=1)
+        self.players_tab_controls.columnconfigure(index=3, weight=1)
+        self.players_tab_controls.columnconfigure(index=4, weight=1)
+        self._build_players_tab_controls_move_top(
+            parent=self.players_tab_controls
+        )
+        self._build_players_tab_controls_move_up(
+            parent=self.players_tab_controls
+        )
+        self._build_players_tab_controls_move_down(
+            parent=self.players_tab_controls
+        )
+        self._build_players_tab_controls_move_bottom(
+            parent=self.players_tab_controls
+        )
+        self._build_players_tab_controls_delete(
+            parent=self.players_tab_controls
+        )
+
+    def _build_players_tab_controls_move_top(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["controls"]["move_top"]
+        self.players_tab_controls_move_top = ttk.Button(
+            master = parent, text=text
+        )
+        self.players_tab_controls_move_top.grid(row=0, column=0, sticky="nsew")
+
+    def _build_players_tab_controls_move_up(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["controls"]["move_up"]
+        self.players_tab_controls_move_up = ttk.Button(
+            master = parent, text=text
+        )
+        self.players_tab_controls_move_up.grid(row=0, column=1, sticky="nsew")
+
+    def _build_players_tab_controls_move_down(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["controls"]["move_down"]
+        self.players_tab_controls_move_down = ttk.Button(
+            master = parent, text=text
+        )
+        self.players_tab_controls_move_down.grid(
+            row=0, column=2, sticky="nsew"
+        )
+
+    def _build_players_tab_controls_move_bottom(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["controls"]["move_bottom"]
+        self.players_tab_controls_move_bottom = ttk.Button(
+            master = parent, text=text
+        )
+        self.players_tab_controls_move_bottom.grid(
+            row=0, column=3, sticky="nsew"
+        )
+
+    def _build_players_tab_controls_delete(self, parent: ttk.Frame):
+        text = PregameWindow.TEXTS["players"]["controls"]["delete"]
+        self.players_tab_controls_delete = ttk.Button(
+            master = parent, text=text
+        )
+        self.players_tab_controls_delete.grid(row=0, column=4, sticky="nsew")
 
     def _build_players_tab_bottom_bar(self, parent: ttk.Frame):
         self.players_tab_bottom_bar = ttk.Frame(master=parent, padding=5)
@@ -311,24 +420,108 @@ class PregameWindow(Window):
         self._configure_overview_tab()
     
     def _configure_mode_tab(self):
-        self.mode_tab_goto_players_tab.state(["disabled"])
-        self.mode_tab_goto_players_tab.configure(
-            command=self._handle_mode_tab_goto_players_tab
-        )
+        self._configure_mode_tab_content()
+        self._configure_mode_tab_bottom_bar()
+
+    def _configure_mode_tab_content(self):
+        self._configure_mode_tab_selection()
+
+    def _configure_mode_tab_selection(self):
         self.mode_tab_selection.bind(
             "<<TreeviewSelect>>", lambda e: self._handle_mode_tab_selection()
         )
 
+    def _configure_mode_tab_bottom_bar(self):
+        self._configure_mode_tab_goto_players_tab()
+
+    def _configure_mode_tab_goto_players_tab(self):
+        self.mode_tab_goto_players_tab.state(["disabled"])
+        self.mode_tab_goto_players_tab.configure(
+            command=self._handle_mode_tab_goto_players_tab
+        )
+
     def _configure_players_tab(self):
         self.root.hide(tab_id=self.players_tab)
-        self.players_tab_goto_overview_tab.state(["disabled"])
-        # [TODO]: bind correct command
-        self.players_tab_prompt_add.configure(
-            command=self._handle_players_tab_done
+        self._configure_players_tab_content()
+
+    def _configure_players_tab_content(self):
+        self._configure_players_tab_prompt()
+        self._configure_players_tab_players()
+        self._configure_players_tab_controls()
+        self._configure_players_tab_bottom_bar()
+
+    def _configure_players_tab_prompt(self):
+        self._configure_players_tab_prompt_entry()
+        self._configure_players_tab_prompt_add()
+
+    def _configure_players_tab_prompt_entry(self):
+        self.players_tab_prompt_entry.configure(
+            textvariable=self.player_to_add
         )
+
+    def _configure_players_tab_prompt_add(self):
+        self.players_tab_prompt_add.configure(
+            command=self._handle_players_tab_prompt_add
+        )
+
+    def _configure_players_tab_players(self):
+        self._configure_players_tab_players_view()
+
+    # [TODO]: bind losing focus
+    def _configure_players_tab_players_view(self):
+        self.players_tab_players_view.bind(
+            "<<TreeviewSelect>>",
+            lambda e: self._handle_players_tab_players_view()
+        )
+
+    def _configure_players_tab_controls(self):
+        self._configure_players_tab_controls_move_top()
+        self._configure_players_tab_controls_move_up()
+        self._configure_players_tab_controls_move_down()
+        self._configure_players_tab_controls_move_bottom()
+        self._configure_players_tab_controls_delete()
+
+    def _configure_players_tab_controls_move_top(self):
+        self.players_tab_controls_move_top.state(["disabled"])
+        self.players_tab_controls_move_top.configure(
+            command=self._handle_players_tab_controls_move_top
+        )
+
+    def _configure_players_tab_controls_move_up(self):
+        self.players_tab_controls_move_up.state(["disabled"])
+        self.players_tab_controls_move_up.configure(
+            command=self._handle_players_tab_controls_move_up
+        )
+
+    def _configure_players_tab_controls_move_down(self):
+        self.players_tab_controls_move_down.state(["disabled"])
+        self.players_tab_controls_move_down.configure(
+            command=self._handle_players_tab_controls_move_down
+        )
+
+    def _configure_players_tab_controls_move_bottom(self):
+        self.players_tab_controls_move_bottom.state(["disabled"])
+        self.players_tab_controls_move_bottom.configure(
+            command=self._handle_players_tab_controls_move_bottom
+        )
+
+    def _configure_players_tab_controls_delete(self):
+        self.players_tab_controls_delete.state(["disabled"])
+        self.players_tab_controls_delete.configure(
+            command=self._handle_players_tab_controls_delete
+        )
+
+    def _configure_players_tab_bottom_bar(self):
+        self._configure_players_tab_goto_mode_tab()
+        self._configure_players_tab_goto_overview_tab()
+    
+    def _configure_players_tab_goto_mode_tab(self):
         self.players_tab_goto_mode_tab.configure(
             command=self._handle_players_tab_goto_mode_tab
         )
+
+    def _configure_players_tab_goto_overview_tab(self):
+        self.players_tab_goto_overview_tab.state(["disabled"])
         self.players_tab_goto_overview_tab.configure(
             command=self._handle_players_tab_goto_overview_tab
         )
@@ -342,8 +535,123 @@ class PregameWindow(Window):
             command=self._handle_overview_tab_start_game
         )
 
+    def _handle_mode_tab_selection(self):
+        self.mode = self.mode_tab_selection.item(
+            item=self.mode_tab_selection.selection()[0], option="text"
+        )
+        self.root.add(child=self.players_tab)
+        self.mode_tab_goto_players_tab.state(["!disabled"])
+
     def _handle_mode_tab_goto_players_tab(self):
         self._goto_players_tab()
+
+    # [TODO]: notify player somehow on failure, i.e. invalid (on success too?)
+    def _handle_players_tab_prompt_add(self) -> None:
+        player_to_add = self.player_to_add.get().strip()
+        self.player_to_add.set("")
+        if not self._is_valid_player_name(name=player_to_add):
+            return None
+        self.players.append(player_to_add)
+        self._update_players_tab_players_view()
+        self.root.add(child=self.overview_tab)
+        self.players_tab_goto_overview_tab.state(["!disabled"])
+        return None
+
+    def _handle_players_tab_players_view(self):
+        self.players_tab_controls_move_top.state(["!disabled"])
+        self.players_tab_controls_move_up.state(["!disabled"])
+        self.players_tab_controls_move_down.state(["!disabled"])
+        self.players_tab_controls_move_bottom.state(["!disabled"])
+        self.players_tab_controls_delete.state(["!disabled"])
+
+    def _handle_players_tab_controls_move_top(self) -> None:
+        selection = self.players_tab_players_view.selection()
+        if not selection:
+            return None
+        item = self.players_tab_players_view.selection()[0]
+        old_index = self.players_tab_players_view.item(
+            item=item, option="text"
+        )-1
+        new_index = 0
+        self.players.insert(new_index, self.players.pop(old_index))
+        self._update_players_tab_players_view()
+        item = self.players_tab_players_view.get_children()[0]
+        self.players_tab_players_view.selection_set(item)
+        return None
+
+    def _handle_players_tab_controls_move_up(self) -> None:
+        selection = self.players_tab_players_view.selection()
+        if not selection:
+            return None
+        item = self.players_tab_players_view.selection()[0]
+        old_index = self.players_tab_players_view.item(
+            item=item, option="text"
+        )-1
+        new_index = old_index-1 if old_index>0 else 0
+        self.players.insert(new_index, self.players.pop(old_index))
+        self._update_players_tab_players_view()
+        item = self.players_tab_players_view.get_children()[new_index]
+        self.players_tab_players_view.selection_set(item)
+        return None
+
+    def _handle_players_tab_controls_move_down(self) -> None:
+        selection = self.players_tab_players_view.selection()
+        if not selection:
+            return None
+        item = self.players_tab_players_view.selection()[0]
+        old_index = self.players_tab_players_view.item(
+            item=item, option="text"
+        )-1
+        new_index = old_index+1 if old_index<len(self.players)-1 else old_index
+        self.players.insert(new_index, self.players.pop(old_index))
+        self._update_players_tab_players_view()
+        item = self.players_tab_players_view.get_children()[new_index]
+        self.players_tab_players_view.selection_set(item)
+        return None
+
+    def _handle_players_tab_controls_move_bottom(self) -> None:
+        selection = self.players_tab_players_view.selection()
+        if not selection:
+            return None
+        item = self.players_tab_players_view.selection()[0]
+        old_index = self.players_tab_players_view.item(
+            item=item, option="text"
+        )-1
+        new_index = len(self.players)-1
+        self.players.insert(new_index, self.players.pop(old_index))
+        self._update_players_tab_players_view()
+        item = self.players_tab_players_view.get_children()[new_index]
+        self.players_tab_players_view.selection_set(item)
+        return None
+
+    def _handle_players_tab_controls_delete(self) -> None:
+        selection = self.players_tab_players_view.selection()
+        if not selection:
+            return None
+        item = self.players_tab_players_view.selection()[0]
+        index = self.players_tab_players_view.item(
+            item=item, option="text"
+        )-1
+        self.players.pop(index)
+        self._update_players_tab_players_view()
+        if len(self.players) == 0:
+            self.root.hide(tab_id=self.overview_tab)
+            self.players_tab_goto_overview_tab.state(["disabled"])
+            return None
+        if index == len(self.players):
+            index = index-1
+        item = self.players_tab_players_view.get_children()[index]
+        self.players_tab_players_view.selection_set(item)
+        return None
+
+    def _is_valid_player_name(self, name: str) -> bool:
+        if not name:
+            return False
+        if name in self.players:
+            return False
+        if len(self.players) == PregameWindow.PLAYER_LIMIT:
+            return False
+        return True
 
     def _handle_players_tab_goto_mode_tab(self):
         self._goto_mode_tab()
@@ -369,11 +677,10 @@ class PregameWindow(Window):
     def _start_game(self):
         print("Start!")
 
-    def _handle_mode_tab_selection(self):
-        self.root.add(child=self.players_tab)
-        self.mode_tab_goto_players_tab.state(["!disabled"])
-
-    # [TODO]: verify if this is correct
-    def _handle_players_tab_done(self):
-        self.root.add(child=self.overview_tab)
-        self.players_tab_goto_overview_tab.state(["!disabled"])
+    def _update_players_tab_players_view(self):
+        for item in self.players_tab_players_view.get_children():
+            self.players_tab_players_view.delete(item)
+        for position, player in enumerate(self.players, start=1):
+            self.players_tab_players_view.insert(
+                parent="", index=tk.END, text=position, values=(player,)
+            )

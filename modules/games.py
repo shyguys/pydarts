@@ -22,7 +22,7 @@ class MetadataElement():
 class Metadata():
     """
     The metadata of all games. Purpose of this class is to provide
-    a flexible and scalable interface between the GUI and game APIs.
+    a flexible and scalable interface between GUI and game classes.
     """
 
     games: tuple[MetadataElement]

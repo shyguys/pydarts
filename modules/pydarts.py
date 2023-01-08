@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from modules.app import App
+import modules.app
 
 
 def configure_logging():
@@ -23,6 +23,5 @@ def parse_args() -> argparse.Namespace:
 def main():
     configure_logging()
     args = parse_args()
-    app = App(enable_debugging=args.enable_debugging)
+    app = modules.app.App(enable_debugging=args.enable_debugging)
     app.mainloop()
-    

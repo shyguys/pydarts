@@ -36,7 +36,7 @@ class _App():
                 logging.warning(f"widget cannot be bordered: {widget!r}")
 
     def catch_event(self, sequence: str):
-        self.root.bind_all(sequence=sequence, add=True, func=self.handle_event)
+        self.root.bind_all(sequence=sequence, func=self.handle_event)
 
     def handle_event(self, event: tk.Event = None):
         logging.info(

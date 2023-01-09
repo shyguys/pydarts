@@ -1,12 +1,8 @@
 import tkinter as tk
 from typing import Generator
 
-def walk_children(
-        widget: tk.Widget, max_depth: int = -1
-        ) -> Generator[tk.Widget, None, None]:
-    children = [
-        (child, max_depth) for child in reversed(widget.winfo_children())
-    ]
+def walk_children(widget: tk.Widget, max_depth: int = -1) -> Generator[tk.Widget, None, None]:
+    children = [(child, max_depth) for child in reversed(widget.winfo_children())]
     while children:
         child, max_depth = children.pop()
         yield child

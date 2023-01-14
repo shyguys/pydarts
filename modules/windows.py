@@ -5,6 +5,61 @@ import modules.games as games
 import modules.tkhelper as tkh
 
 
+class PregameWindow():
+    """
+    tbc
+    """
+
+    # Temporary, to be defined somewhere/-how else once I know a better way.
+    PLAYER_LIMIT = 8
+
+    def __init__(self, parent = tk.Tk):
+        self.parent = parent
+        self.root: ttk.Notebook = None
+        self.modes_tab: ModesTab = None
+        self.players_tab: PlayersTab = None
+        self.overview_tab: OverviewTab = None
+
+    def build(self):
+        self.build_root()
+        self.modes_tab = ModesTab(parent=self)
+        self.modes_tab.build()
+        self.players_tab = PlayersTab(parent=self)
+        self.players_tab.build()
+        self.overview_tab = OverviewTab(parent=self)
+        self.overview_tab.build()
+
+    def build_root(self):
+        self.root = ttk.Notebook(master=self.parent, padding=5)
+        self.root.grid(row=0, column=0, sticky="nsew")
+        self.root.rowconfigure(index=0, weight=1)
+        self.root.columnconfigure(index=0, weight=1)
+
+    def bind(self):
+        self.bind_root()
+        self.modes_tab.bind()
+        self.players_tab.bind()
+        self.overview_tab.bind()
+
+    def bind_root(self):
+        self.root.bind("<<NotebookTabChanged>>", self.handle_tab_changed)
+
+    def handle_tab_changed(self, event: tk.Event) -> None:
+        current_tab_index = self.root.index("current")
+        if current_tab_index == self.root.index(self.modes_tab.root):
+            self.modes_tab.handle_change_to_self(event)
+            return None
+        if current_tab_index == self.root.index(self.players_tab.root):
+            self.players_tab.handle_change_to_self(event)
+            return None
+
+    def change_tab_to(self, tab_id):
+        self.root.select(tab_id)
+
+    # [TODO]: define BaseTab
+    # def get_tabs(self):
+    #     return [self.modes_tab, self.players_tab, self.overview_tab]
+
 class ModesTab():
     """
     tbc
@@ -20,8 +75,8 @@ class ModesTab():
         "goto_players_tab": "Weiter >"
     }
 
-    def __init__(self, notebook: ttk.Notebook):
-        self.parent = notebook
+    def __init__(self, parent: PregameWindow):
+        self.parent = parent
         self.root: ttk.Frame = None
         self.content: ttk.Frame = None
         self.view: ttk.Treeview = None
@@ -38,8 +93,8 @@ class ModesTab():
 
     def build_root(self):
         text = ModesTab.TEXTS["title"]
-        self.root = ttk.Frame(master=self.parent, padding=5)
-        self.parent.add(child=self.root, text=text)
+        self.root = ttk.Frame(master=self.parent.root, padding=5)
+        self.parent.root.add(child=self.root, text=text)
         self.root.rowconfigure(index=0, weight=1)
         self.root.columnconfigure(index=0, weight=1)
 
@@ -81,6 +136,7 @@ class ModesTab():
     def bind(self):
         self.bind_root()
         self.bind_view()
+        self.bind_goto_players_tab()
 
     def bind_root(self):
         tkh.bind_children(
@@ -95,12 +151,23 @@ class ModesTab():
     def bind_view(self):
         self.view.bind("<<TreeviewSelect>>", self.handle_selection)
 
+    def bind_goto_players_tab(self):
+        self.goto_players_tab.configure(command=self.handle_goto_players_tab)
+
+    def handle_change_to_self(self, event: tk.Event):
+        """
+        Select the first game mode if none is selected. Focus on the button
+        that leads to the next tab to, i.e. provide fast movement via keyboard.
+        """
+        if not self.view.selection():
+            self.view.selection_set(self.view.get_children()[0])
+        self.goto_players_tab.focus_set()
+
     def handle_key_release_down(self, event: tk.Event):
         """
         Interpret DOWN as if it was RELEASED inside the view, i.e. select the
         next item. Focus remains on the widget that caught this event.
         """
-
         children = self.view.get_children()
         selected_items = self.view.selection()
         if not selected_items:
@@ -118,7 +185,6 @@ class ModesTab():
         Interpret UP as if it was RELEASED inside the view, i.e. select the
         previous item. Focus remains on the widget that caught this event.
         """
-
         children = self.view.get_children()
         selected_items = self.view.selection()
         if not selected_items:
@@ -135,21 +201,10 @@ class ModesTab():
         """
         Save the new selection.
         """
-
         self.mode = self.view.item(self.view.selection()[0], option="text")
 
-    def handle_tab_change_to_self(self, event: tk.Event):
-        """
-        Select the first game mode if none is selected. Focus on the button
-        that leads to the next tab to, i.e. provide fast movement via keyboard.
-        """
-
-        if not self.view.selection():
-            self.view.selection_set(self.view.get_children()[0])
-        self.goto_players_tab.focus_set()
-
-
-# ########################################################################### #
+    def handle_goto_players_tab(self):
+        self.parent.change_tab_to(self.parent.players_tab.root)
 
 class PlayersTab():
     """
@@ -179,8 +234,8 @@ class PlayersTab():
         "goto_overview_tab": "Weiter >"
     }
 
-    def __init__(self, notebook: ttk.Notebook):
-        self.parent = notebook
+    def __init__(self, parent: PregameWindow):
+        self.parent = parent
         self.root: ttk.Frame = None
         self.content: ttk.Frame = None
         self.prompt: ttk.Frame = None
@@ -220,8 +275,8 @@ class PlayersTab():
 
     def build_root(self):
         text = PlayersTab.TEXTS["title"]
-        self.root = ttk.Frame(master=self.parent, padding=5)
-        self.parent.add(child=self.root, text=text)
+        self.root = ttk.Frame(master=self.parent.root, padding=5)
+        self.parent.root.add(child=self.root, text=text)
         self.root.rowconfigure(index=0, weight=1)
         self.root.columnconfigure(index=0, weight=1)
 
@@ -327,6 +382,12 @@ class PlayersTab():
             self.root, "<KeyRelease-Down>", self.handle_key_release_down
         )
         ...
+
+    def handle_change_to_self(self, event: tk.Event):
+        """
+        Focus on the player entry.
+        """
+        self.entry.focus_set()
 
     def handle_key_release_up(self, event: tk.Event):
         print(f"caught '<KeyRelease-Up>' event in: {event.widget!r}")
@@ -587,7 +648,6 @@ class PlayersTab():
     
     # def _goto_overview_tab(self):
     #     self.root.select(tab_id=self.overview_tab)
-
     ...
 
 # ########################################################################### #
@@ -609,8 +669,8 @@ class OverviewTab():
         "start_game": "Start!"
     }
 
-    def __init__(self, notebook: ttk.Notebook):
-        self.parent = notebook
+    def __init__(self, parent: PregameWindow):
+        self.parent = parent
         self.root: ttk.Frame = None
         self.content: ttk.Frame = None
         self.label: ttk.Label = None
@@ -628,8 +688,8 @@ class OverviewTab():
 
     def build_root(self):
         text = OverviewTab.TEXTS["title"]
-        self.root = ttk.Frame(master=self.parent, padding=5)
-        self.parent.add(child=self.root, text=text)
+        self.root = ttk.Frame(master=self.parent.root, padding=5)
+        self.parent.root.add(child=self.root, text=text)
         self.root.rowconfigure(index=0, weight=1)
         self.root.columnconfigure(index=0, weight=1)
 
@@ -697,71 +757,3 @@ class OverviewTab():
 
     # def _start_game(self):
     #     print("Start!")
-
-    ...
-
-# ########################################################################### #
-# ########################################################################### #
-# ########################################################################### #
-# ########################################################################### #
-# ########################################################################### #
-
-class PregameWindow():
-    """
-    tbc
-    """
-
-    # Temporary, to be defined somewhere/-how else once I know a better way.
-    PLAYER_LIMIT = 8
-
-    def __init__(self, parent = tk.Tk):
-        self.parent = parent
-        self.root: ttk.Notebook = None
-        self.modes_tab: ModesTab = None
-        self.players_tab: PlayersTab = None
-        self.overview_tab: OverviewTab = None
-
-    def build(self):
-        self.build_root()
-        self.modes_tab = ModesTab(notebook=self.root)
-        self.modes_tab.build()
-        self.players_tab = PlayersTab(notebook=self.root)
-        self.players_tab.build()
-        self.overview_tab = OverviewTab(notebook=self.root)
-        self.overview_tab.build()
-
-    def build_root(self):
-        self.root = ttk.Notebook(master=self.parent, padding=5)
-        self.root.grid(row=0, column=0, sticky="nsew")
-        self.root.rowconfigure(index=0, weight=1)
-        self.root.columnconfigure(index=0, weight=1)
-
-    def bind(self):
-        self.bind_root()
-        self.modes_tab.bind()
-        self.bind_modes_tab_goto_players_tab()
-        self.players_tab.bind()
-        self.overview_tab.bind()
-
-    def bind_root(self):
-        self.root.bind("<<NotebookTabChanged>>", self.handle_tab_changed)
-
-    def bind_modes_tab_goto_players_tab(self):
-        self.modes_tab.goto_players_tab.configure(
-            command=self.handle_modes_tab_goto_players_tab
-        )
-
-    def handle_modes_tab_goto_players_tab(self):
-        self.change_tab_to(self.players_tab.root)
-
-    def handle_tab_changed(self, event: tk.Event) -> None:
-        current_tab_index = self.root.index("current")
-        if current_tab_index == self.root.index(self.modes_tab.root):
-            self.modes_tab.handle_tab_change_to_self(event)
-            return None
-        if current_tab_index == self.root.index(self.players_tab.root):
-            self.players_tab.entry.focus_set()
-            return None
-
-    def change_tab_to(self, tab_id):
-        self.root.select(tab_id)

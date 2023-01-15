@@ -16,8 +16,13 @@ class _App():
         self.build_pregame_window()
 
     def build_root(self):
+        width = 600
+        height = 600
+        x = int((self.root.winfo_screenwidth()/2)-(width/2))
+        y = int((self.root.winfo_screenheight()/2)-(height/2))
         self.root.title(string="PyDarts")
-        self.root.minsize(width=600, height=600)
+        self.root.minsize(width=width, height=height)
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
         self.root.rowconfigure(index=0, weight=1)
         self.root.columnconfigure(index=0, weight=1)
 

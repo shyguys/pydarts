@@ -45,7 +45,8 @@ class _App():
     # [TODO]: display grid cell borders
     def configure_debugging(self):
         self.highlight_children()
-        for sequence in ["<KeyRelease>"]:
+        sequences = ["<KeyRelease>"]
+        for sequence in sequences:
             self.catch_event(sequence)
 
     def highlight_children(self):

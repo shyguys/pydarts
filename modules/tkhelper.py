@@ -1,12 +1,20 @@
 import tkinter as tk
 from typing import Generator
 
+# [TODO]: improve type hints for widgets
+
 # [TODO]: add type hint to 'func' if applicable
 def bind_children(widget: tk.Widget, sequence: str, func, excluded_widgets: list[tk.Widget] = []):
     for child in walk_children(widget):
         if child in excluded_widgets:
             continue
         child.bind(sequence, func)
+
+def disable_focus_of_children(widget: tk.Widget, excluded_widgets: list[tk.Widget] = []):
+    for child in walk_children(widget):
+        if child in excluded_widgets:
+            continue
+        child.configure(takefocus=0)
 
 def is_parent_of(parent: tk.Widget, widget: tk.Widget) -> bool:
     for child in walk_children(parent):

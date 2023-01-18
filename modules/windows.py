@@ -60,6 +60,7 @@ class PregameWindow():
     # def get_tabs(self):
     #     return [self.modes_tab, self.players_tab, self.overview_tab]
 
+
 class ModesTab():
     """
     tbc
@@ -226,6 +227,7 @@ class ModesTab():
     def handle_goto_players_tab(self):
         self.parent.change_tab_to(self.parent.players_tab.root)
 
+
 class PlayersTab():
     """
     tbc
@@ -250,7 +252,7 @@ class PlayersTab():
             "move_bottom": "⊻",
             "remove": "Löschen"
         },
-        "goto_mode_tab": "< Zurück",
+        "goto_modes_tab": "< Zurück",
         "goto_overview_tab": "Weiter >"
     }
 
@@ -271,7 +273,7 @@ class PlayersTab():
         self.move_bottom: ttk.Button = None
         self.remove: ttk.Button = None
         self.bottom_bar: ttk.Frame = None
-        self.goto_mode_tab: ttk.Button = None
+        self.goto_modes_tab: ttk.Button = None
         self.goto_overview_tab: ttk.Button = None
         self.players: list[str] = []
         self.selected_player: str = None
@@ -291,7 +293,7 @@ class PlayersTab():
         self.build_move_bottom()
         self.build_remove()
         self.build_bottom_bar()
-        self.build_goto_mode_tab()
+        self.build_goto_modes_tab()
         self.build_goto_overview_tab()
 
     def build_root(self):
@@ -382,10 +384,10 @@ class PlayersTab():
         self.bottom_bar.columnconfigure(index=0, weight=1)
         self.bottom_bar.columnconfigure(index=1, weight=1)
 
-    def build_goto_mode_tab(self):
-        text = PlayersTab.TEXTS["goto_mode_tab"]
-        self.goto_mode_tab = ttk.Button(master=self.bottom_bar, text=text)
-        self.goto_mode_tab.grid(row=0, column=0, sticky="nsw")
+    def build_goto_modes_tab(self):
+        text = PlayersTab.TEXTS["goto_modes_tab"]
+        self.goto_modes_tab = ttk.Button(master=self.bottom_bar, text=text)
+        self.goto_modes_tab.grid(row=0, column=0, sticky="nsw")
 
     def build_goto_overview_tab(self):
         text = PlayersTab.TEXTS["goto_overview_tab"]
@@ -396,15 +398,44 @@ class PlayersTab():
         self.bind_root()
         self.bind_entry()
         self.bind_add()
+        self.bind_view()
+        self.bind_move_top()
+        self.bind_move_up()
+        self.bind_move_down()
+        self.bind_move_bottom()
+        self.bind_remove()
+        self.bind_goto_modes_tab()
+        self.bind_goto_overview_tab()
 
     def bind_root(self):
         tkh.bind_children(
             self.root, "<KeyRelease-Up>", self.handle_key_release_up,
             [self.view]
         )
+        self.root.bind
         tkh.bind_children(
             self.root, "<KeyRelease-Down>", self.handle_key_release_down,
             [self.view]
+        )
+        tkh.bind_children(
+            self.root, "<Shift-Control-KeyRelease-Up>",
+            self.handle_shift_control_key_release_up, [self.view]
+        )
+        tkh.bind_children(
+            self.root, "<Control-KeyRelease-Up>",
+            self.handle_control_key_release_up, [self.view]
+        )
+        tkh.bind_children(
+            self.root, "<Control-KeyRelease-Down>",
+            self.handle_control_key_release_down, [self.view]
+        )
+        tkh.bind_children(
+            self.root, "<Shift-Control-KeyRelease-Down>",
+            self.handle_shift_control_key_release_down, [self.view]
+        )
+        tkh.bind_children(
+            self.root, "<Control-KeyRelease-Delete>",
+            self.handle_control_key_release_delete, [self.view]
         )
 
     def bind_entry(self):
@@ -416,14 +447,56 @@ class PlayersTab():
     def bind_add(self):
         self.add.configure(command=self.handle_add)
 
+    # [TODO]: bind losing focus
     def bind_view(self):
         self.view.bind("<<TreeviewSelect>>", self.handle_selection)
+
+    def bind_move_top(self):
+        self.move_top.configure(command=self.handle_move_top)
+
+    def bind_move_up(self):
+        self.move_up.configure(command=self.handle_move_up)
+
+    def bind_move_down(self):
+        self.move_down.configure(command=self.handle_move_down)
+
+    def bind_move_bottom(self):
+        self.move_bottom.configure(command=self.handle_move_bottom)
+
+    def bind_remove(self):
+        self.remove.configure(command=self.handle_remove)
+
+    def bind_goto_modes_tab(self):
+        self.goto_modes_tab.configure(command=self.handle_goto_modes_tab)
+
+    def bind_goto_overview_tab(self):
+        self.goto_overview_tab.configure(command=self.handle_goto_overview_tab)
 
     def handle_change_to_self(self, event: tk.Event = None):
         """
         Focus on the player entry.
         """
         self.entry.focus_set()
+
+    def handle_key_release_up(self, event: tk.Event = None) -> None:
+        """
+        Interpret UP as if it was RELEASED inside the view, i.e. select the
+        previous item. Focus remains on the widget that caught this event.
+        """
+        children = self.view.get_children()
+        if not children:
+            return None
+
+        selected_items = self.view.selection()
+        if not selected_items:
+            self.view.selection_set(children[-1])
+            return None
+
+        selected_item = selected_items[0]
+        index = self.view.index(selected_item)
+        if index != 0:
+            self.view.selection_set(children[index-1])
+        return None
 
     def handle_key_release_down(self, event: tk.Event = None):
         """
@@ -445,23 +518,21 @@ class PlayersTab():
             self.view.selection_set(children[index+1])
         return None
 
-    def handle_key_release_up(self, event: tk.Event = None) -> None:
-        """
-        Interpret UP as if it was RELEASED inside the view, i.e. select the
-        previous item. Focus remains on the widget that caught this event.
-        """
-        children = self.view.get_children()
-        selected_items = self.view.selection()
-        if not selected_items:
-            self.view.selection_set(children[-1])
-            return None
+    def handle_shift_control_key_release_up(self, event: tk.Event = None):
+        self.move_top.invoke()
 
-        selected_item = selected_items[0]
-        index = self.view.index(selected_item)
-        if index != 0:
-            self.view.selection_set(children[index-1])
-        return None
-    
+    def handle_control_key_release_up(self, event: tk.Event = None):
+        self.move_up.invoke()
+
+    def handle_control_key_release_down(self, event: tk.Event = None):
+        self.move_down.invoke()
+
+    def handle_shift_control_key_release_down(self, event: tk.Event = None):
+        self.move_bottom.invoke()
+
+    def handle_control_key_release_delete(self, event: tk.Event = None):
+        self.remove.invoke()
+
     def handle_add(self, event: tk.Event = None) -> None:
         self.entry.focus_set()
         player_name = self.player_to_add.get().strip()
@@ -471,18 +542,99 @@ class PlayersTab():
             return None
         self.players.append(player_name)
         self.update_view()
+        self.view.selection_set(self.view.get_children()[-1])
         return None
 
     def handle_key_release_return_in_entry(self, event: tk.Event = None):
         self.add.invoke()
 
-    def handle_selection(self, event: tk.Event = None):
-        """
-        Save the new selection.
-        """
-        self.selected_player = self.view.item(
-            self.view.selection()[0], option="text"
-        )
+    def handle_selection(self, event: tk.Event = None) -> None:
+        selection = self.view.selection()
+        if not selection:
+            self.selected_player = None
+            return None
+        
+        self.selected_player = self.view.item(selection[0], option="text")
+        return None
+
+    def handle_move_top(self, event: tk.Event = None):
+        selection = self.view.selection()
+        if not selection:
+            return None
+
+        selected_item = self.view.selection()[0]
+        if selected_item == self.view.get_children()[0]:
+            return None
+
+        selected_index = self.view.index(selected_item)
+        self.players.insert(0, self.players.pop(selected_index))
+        self.update_view()
+        self.view.selection_set(self.view.get_children()[0])
+        return None
+
+    def handle_move_up(self, event: tk.Event = None):
+        selection = self.view.selection()
+        if not selection:
+            return None
+
+        selected_item = self.view.selection()[0]
+        if selected_item == self.view.get_children()[0]:
+            return None
+
+        selected_index = self.view.index(selected_item)
+        new_index = selected_index-1
+        self.players.insert(new_index, self.players.pop(selected_index))
+        self.update_view()
+        self.view.selection_set(self.view.get_children()[new_index])
+        return None
+
+    def handle_move_down(self, event: tk.Event = None):
+        selection = self.view.selection()
+        if not selection:
+            return None
+
+        selected_item = self.view.selection()[0]
+        if selected_item == self.view.get_children()[-1]:
+            return None
+
+        selected_index = self.view.index(selected_item)
+        new_index = selected_index+1
+        self.players.insert(new_index, self.players.pop(selected_index))
+        self.update_view()
+        self.view.selection_set(self.view.get_children()[new_index])
+        return None
+
+    def handle_move_bottom(self, event: tk.Event = None):
+        selection = self.view.selection()
+        if not selection:
+            return None
+
+        selected_item = self.view.selection()[0]
+        if selected_item == self.view.get_children()[-1]:
+            return None
+
+        self.players.append(self.players.pop(self.view.index(selected_item)))
+        self.update_view()
+        self.view.selection_set(self.view.get_children()[-1])
+        return None
+
+    def handle_remove(self, event: tk.Event = None) -> None:
+        selection = self.view.selection()
+        if not selection:
+            return None
+
+        selected_item = self.view.selection()[0]
+        selected_index = self.view.index(selected_item)
+        self.players.pop(selected_index)
+        self.update_view()
+
+        if not self.view.get_children():
+            return None
+        
+        new_index = selected_index
+        if new_index > len(self.view.get_children())-1:
+            new_index = new_index-1
+        self.view.selection_set(self.view.get_children()[new_index])
 
     def is_valid_player_name(self, player_name: str) -> bool:
         if not player_name:
@@ -501,205 +653,12 @@ class PlayersTab():
                 parent="", index=tk.END, text=position, values=(player,)
             )
 
-    # # [TODO]: bind losing focus
-    # def _configure_players_tab_players_view(self):
-    #     self.players_tab_players_view.bind(
-    #         "<<TreeviewSelect>>",
-    #         lambda e: self._handle_players_tab_players_view_select()
-    #     )
-    #     self.players_tab_players_view.bind(
-    #         "<Key-Delete>",
-    #         lambda e: self._handle_players_tab_players_view_delete()
-    #     )
+    def handle_goto_modes_tab(self):
+        self.parent.change_tab_to(self.parent.modes_tab.root)
 
-    # def _configure_players_tab_controls(self):
-    #     self._configure_players_tab_controls_move_top()
-    #     self._configure_players_tab_controls_move_up()
-    #     self._configure_players_tab_controls_move_down()
-    #     self._configure_players_tab_controls_move_bottom()
-    #     self._configure_players_tab_controls_delete()
+    def handle_goto_overview_tab(self):
+        self.parent.change_tab_to(self.parent.overview_tab.root)
 
-    # def _configure_players_tab_controls_move_top(self):
-    #     self.players_tab_controls_move_top.state(["disabled"])
-    #     self.players_tab_controls_move_top.configure(
-    #         command=self._handle_players_tab_controls_move_top
-    #     )
-
-    # def _configure_players_tab_controls_move_up(self):
-    #     self.players_tab_controls_move_up.state(["disabled"])
-    #     self.players_tab_controls_move_up.configure(
-    #         command=self._handle_players_tab_controls_move_up
-    #     )
-
-    # def _configure_players_tab_controls_move_down(self):
-    #     self.players_tab_controls_move_down.state(["disabled"])
-    #     self.players_tab_controls_move_down.configure(
-    #         command=self._handle_players_tab_controls_move_down
-    #     )
-
-    # def _configure_players_tab_controls_move_bottom(self):
-    #     self.players_tab_controls_move_bottom.state(["disabled"])
-    #     self.players_tab_controls_move_bottom.configure(
-    #         command=self._handle_players_tab_controls_move_bottom
-    #     )
-
-    # def _configure_players_tab_controls_delete(self):
-    #     self.players_tab_controls_delete.state(["disabled"])
-    #     self.players_tab_controls_delete.configure(
-    #         command=self._handle_players_tab_controls_delete
-    #     )
-
-    # def _configure_players_tab_bottom_bar(self):
-    #     self._configure_players_tab_goto_mode_tab()
-    #     self._configure_players_tab_goto_overview_tab()
-    
-    # def _configure_players_tab_goto_mode_tab(self):
-    #     self.players_tab_goto_mode_tab.configure(
-    #         command=self._handle_players_tab_goto_mode_tab
-    #     )
-
-    # def _configure_players_tab_goto_overview_tab(self):
-    #     self.players_tab_goto_overview_tab.state(["disabled"])
-    #     self.players_tab_goto_overview_tab.configure(
-    #         command=self._handle_players_tab_goto_overview_tab
-    #     )
-
-    # def _handle_players_tab_prompt_entry_return(self):
-    #     self.players_tab_prompt_add.invoke()
-
-    # def _handle_players_tab_prompt_entry_up(self) -> None:
-    #     if not self.players:
-    #         return None
-    #     self.players_tab_players_view.selection_set(self.players_tab_players_view.get_children()[0])
-    #     return None
-
-    # def _handle_players_tab_prompt_entry_down(self) -> None:
-    #     if not self.players:
-    #         return None
-    #     self.players_tab_players_view.selection_set(self.players_tab_players_view.get_children()[0])
-    #     return None
-
-    # def _handle_players_tab_players_view_select(self) -> None:
-    #     if not self.players:
-    #         return None
-    #     self.players_tab_controls_move_top.state(["!disabled"])
-    #     self.players_tab_controls_move_up.state(["!disabled"])
-    #     self.players_tab_controls_move_down.state(["!disabled"])
-    #     self.players_tab_controls_move_bottom.state(["!disabled"])
-    #     self.players_tab_controls_delete.state(["!disabled"])
-    #     self.players_tab_players_view.focus_set()
-    #     return None
-
-    # def _handle_players_tab_players_view_delete(self) -> None:
-    #     if not self.players_tab_players_view.selection():
-    #         return None
-    #     self.players_tab_controls_delete.invoke()
-    #     return None
-
-    # def _handle_players_tab_controls_move_top(self) -> None:
-    #     selection = self.players_tab_players_view.selection()
-    #     if not selection:
-    #         return None
-    #     item = self.players_tab_players_view.selection()[0]
-    #     old_index = self.players_tab_players_view.item(
-    #         item=item, option="text"
-    #     )-1
-    #     new_index = 0
-    #     self.players.insert(new_index, self.players.pop(old_index))
-    #     self._update_players_tab_players_view()
-    #     item = self.players_tab_players_view.get_children()[0]
-    #     self.players_tab_players_view.selection_set(item)
-    #     return None
-
-    # def _handle_players_tab_controls_move_up(self) -> None:
-    #     selection = self.players_tab_players_view.selection()
-    #     if not selection:
-    #         return None
-    #     item = self.players_tab_players_view.selection()[0]
-    #     old_index = self.players_tab_players_view.item(
-    #         item=item, option="text"
-    #     )-1
-    #     new_index = old_index-1 if old_index>0 else 0
-    #     self.players.insert(new_index, self.players.pop(old_index))
-    #     self._update_players_tab_players_view()
-    #     item = self.players_tab_players_view.get_children()[new_index]
-    #     self.players_tab_players_view.selection_set(item)
-    #     return None
-
-    # def _handle_players_tab_controls_move_down(self) -> None:
-    #     selection = self.players_tab_players_view.selection()
-    #     if not selection:
-    #         return None
-    #     item = self.players_tab_players_view.selection()[0]
-    #     old_index = self.players_tab_players_view.item(
-    #         item=item, option="text"
-    #     )-1
-    #     new_index = old_index+1 if old_index<len(self.players)-1 else old_index
-    #     self.players.insert(new_index, self.players.pop(old_index))
-    #     self._update_players_tab_players_view()
-    #     item = self.players_tab_players_view.get_children()[new_index]
-    #     self.players_tab_players_view.selection_set(item)
-    #     return None
-
-    # def _handle_players_tab_controls_move_bottom(self) -> None:
-    #     selection = self.players_tab_players_view.selection()
-    #     if not selection:
-    #         return None
-    #     item = self.players_tab_players_view.selection()[0]
-    #     old_index = self.players_tab_players_view.item(
-    #         item=item, option="text"
-    #     )-1
-    #     new_index = len(self.players)-1
-    #     self.players.insert(new_index, self.players.pop(old_index))
-    #     self._update_players_tab_players_view()
-    #     item = self.players_tab_players_view.get_children()[new_index]
-    #     self.players_tab_players_view.selection_set(item)
-    #     return None
-
-    # def _handle_players_tab_controls_delete(self) -> None:
-    #     selection = self.players_tab_players_view.selection()
-    #     if not selection:
-    #         return None
-    #     item = self.players_tab_players_view.selection()[0]
-    #     index = self.players_tab_players_view.item(
-    #         item=item, option="text"
-    #     )-1
-    #     self.players.pop(index)
-    #     self._update_players_tab_players_view()
-    #     if not self.players:
-    #         self.root.hide(tab_id=self.overview_tab)
-    #         self.players_tab_controls_move_top.state(["disabled"])
-    #         self.players_tab_controls_move_up.state(["disabled"])
-    #         self.players_tab_controls_move_down.state(["disabled"])
-    #         self.players_tab_controls_move_bottom.state(["disabled"])
-    #         self.players_tab_controls_delete.state(["disabled"])
-    #         self.players_tab_goto_overview_tab.state(["disabled"])
-    #         self.players_tab_prompt_entry.focus_set()
-    #         return None
-    #     if index == len(self.players):
-    #         index = index-1
-    #     item = self.players_tab_players_view.get_children()[index]
-    #     self.players_tab_players_view.selection_set(item)
-    #     return None
-
-    # def _handle_players_tab_goto_mode_tab(self):
-    #     self._goto_mode_tab()
-
-    # def _handle_players_tab_goto_overview_tab(self):
-    #     self._goto_overview_tab()
-
-    # def _goto_mode_tab(self):
-    #     self.root.select(tab_id=self.mode_tab)
-    
-    # def _goto_overview_tab(self):
-    #     self.root.select(tab_id=self.overview_tab)
-    ...
-
-# ########################################################################### #
-# ########################################################################### #
-# ########################################################################### #
-# ########################################################################### #
-# ########################################################################### #
 
 class OverviewTab():
     """

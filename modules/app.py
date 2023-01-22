@@ -16,7 +16,7 @@ class _App():
         self.build_pregame_window()
 
     def build_root(self):
-        width = 600
+        width = 500
         height = 600
         x = int((self.root.winfo_screenwidth()/2)-(width/2))
         y = int((self.root.winfo_screenheight()/2)-(height/2))

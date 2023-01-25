@@ -75,6 +75,8 @@ class PregameWindow():
 
     def bind(self):
         self.bind_root()
+        self.bind_go_to_previous_tab()
+        self.bind_go_to_next_tab()
         self.modes_tab.bind()
         self.players_tab.bind()
         self.overview_tab.bind()
@@ -94,7 +96,34 @@ class PregameWindow():
             self.overview_tab.handle_change_to_self(event)
             return None
 
-    def change_tab_to(self, tab_id):
+    def bind_go_to_previous_tab(self):
+        widget = self.go_to_previous_tab
+        widget.configure(command=self.handle_go_to_previous_tab)
+
+    def handle_go_to_previous_tab(self, event: tk.Event = None):
+        self.change_to_previous_tab()
+
+    def bind_go_to_next_tab(self):
+        widget = self.go_to_next_tab
+        widget.configure(command=self.handle_go_to_next_tab)
+
+    def handle_go_to_next_tab(self, event: tk.Event = None):
+        self.change_to_next_tab()
+
+    def change_to_previous_tab(self) -> None:
+        current_index = self.notebook.index("current")
+        if current_index == 0 or len(self.notebook.tabs()) == 1:
+            return None
+        self.change_to_tab(current_index-1)
+
+    def change_to_next_tab(self) -> None:
+        current_index = self.notebook.index("current")
+        last_index = len(self.notebook.tabs())-1
+        if current_index == last_index or last_index == 0:
+            return None
+        self.change_to_tab(current_index+1)
+
+    def change_to_tab(self, tab_id):
         self.notebook.select(tab_id)
 
     # [TODO]: define BaseTab
@@ -222,7 +251,7 @@ class ModesTab():
         )
 
     def handle_goto_players_tab(self):
-        self.parent.change_tab_to(self.parent.players_tab.root)
+        self.parent.change_to_tab(self.parent.players_tab.root)
 
 
 class PlayersTab():

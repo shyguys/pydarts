@@ -84,6 +84,14 @@ class PregameWindow():
     def bind_root(self):
         self.root.bind("<<NotebookTabChanged>>", self.handle_tab_changed)
 
+    def bind_go_to_previous_tab(self):
+        widget = self.go_to_previous_tab
+        widget.configure(command=self.handle_go_to_previous_tab)
+
+    def bind_go_to_next_tab(self):
+        widget = self.go_to_next_tab
+        widget.configure(command=self.handle_go_to_next_tab)
+
     def handle_tab_changed(self, event: tk.Event = None) -> None:
         current_tab_index = self.notebook.index("current")
         if current_tab_index == self.notebook.index(self.modes_tab.root):
@@ -96,16 +104,8 @@ class PregameWindow():
             self.overview_tab.handle_change_to_self(event)
             return None
 
-    def bind_go_to_previous_tab(self):
-        widget = self.go_to_previous_tab
-        widget.configure(command=self.handle_go_to_previous_tab)
-
     def handle_go_to_previous_tab(self, event: tk.Event = None):
         self.change_to_previous_tab()
-
-    def bind_go_to_next_tab(self):
-        widget = self.go_to_next_tab
-        widget.configure(command=self.handle_go_to_next_tab)
 
     def handle_go_to_next_tab(self, event: tk.Event = None):
         self.change_to_next_tab()

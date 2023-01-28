@@ -25,12 +25,15 @@ class PyDarts():
     def build_app(self):
         app = self.app
         app.title(string="PyDarts")
+
         width = 500
         height = 600
         x = int((app.winfo_screenwidth()/2)-(width/2))
         y = int((app.winfo_screenheight()/2)-(height/2))
         app.minsize(width=width, height=height)
+        app.maxsize(width=width, height=height)
         app.geometry(f"{width}x{height}+{x}+{y}")
+        
         app.rowconfigure(index=0, weight=1)
         app.columnconfigure(index=0, weight=1)
 

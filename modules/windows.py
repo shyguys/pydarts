@@ -46,9 +46,6 @@ class ModesTab(BaseTab):
 
         self.view = ttk.Treeview(master=self.root)
 
-        self.build()
-        self.bind()
-
     def build(self):
         self.build_root()
         self.build_view()
@@ -92,8 +89,10 @@ class ModesTab(BaseTab):
         pass
 
     def handle_selection(self, event: tk.Event = None):
-        PregameWindow.mode = self.view.item(
-            self.view.selection()[0], option="text"
+        item = self.view.selection()[0]
+        PregameWindow.mode_name.set(self.view.item(item, option="text"))
+        PregameWindow.mode_description.set(
+            self.view.item(item, option="values")[0]
         )
 
 
@@ -159,9 +158,6 @@ class PlayersTab(BaseTab):
         self.remove = ttk.Button(master=self.controls)
 
         self.selected_player = ""
-
-        self.build()
-        self.bind()
 
     def build(self):
         self.build_root()
@@ -303,6 +299,7 @@ class PlayersTab(BaseTab):
         self.remove.configure(command=self.handle_remove)
 
     def handle_change_to_self(self, event: tk.Event = None):
+        self.toggle_controls()
         self.entry.focus_set()
 
     def handle_key_release_return_in_entry(self, event: tk.Event = None):
@@ -319,6 +316,7 @@ class PlayersTab(BaseTab):
 
         PregameWindow.players.append(player_name)
         self.update_view()
+        self.toggle_controls()
         return None
 
     def handle_selection(self, event: tk.Event = None) -> None:
@@ -410,12 +408,15 @@ class PlayersTab(BaseTab):
         self.update_view()
 
         if not self.view.get_children():
+            self.toggle_controls()
             return None
         
         new_index = selected_index
         if new_index > len(self.view.get_children())-1:
             new_index = new_index-1
         self.view.selection_set(self.view.get_children()[new_index])
+        self.toggle_controls()
+        return None
 
     def is_valid_player_name(self, player_name: str) -> bool:
         if not player_name:
@@ -425,6 +426,21 @@ class PlayersTab(BaseTab):
         if len(PregameWindow.players) == PregameWindow.PLAYER_LIMIT:
             return False
         return True
+
+    def toggle_controls(self):
+        controls = [
+            control for control in vars(self).values()
+            if
+                isinstance(control, ttk.Button)
+                and control.master is self.controls
+        ]
+
+        if len(PregameWindow.players) == 0:
+            for control in controls:
+                control.state(["disabled"])
+        else:
+            for control in controls:
+                control.state(["!disabled"])
 
     def update_view(self):
         for item in self.view.get_children():
@@ -445,9 +461,6 @@ class OverviewTab(BaseTab):
         "title": "Spiel starten",
         "mode": {
             "title": "Modus",
-            "edit": {
-                "title": "Bearbeiten"
-            }
         },
         "players": {
             "title": "Spieler",
@@ -465,60 +478,84 @@ class OverviewTab(BaseTab):
         self.root = ttk.Frame(master=self.parent)
 
         self.mode = ttk.Labelframe(master=self.root)
-        self.mode_label = ttk.Label(master=self.mode)
-        self.mode_edit = ttk.Button(master=self.mode)
+        self.mode_name_label = ttk.Label(master=self.mode)
+        self.mode_separator = ttk.Separator(master=self.mode)
+        self.mode_description_label = ttk.Label(master=self.mode)
 
         self.players = ttk.Labelframe(master=self.root)
         self.players_view = ttk.Treeview(master=self.players)
-        self.players_edit = ttk.Button(master=self.players)
 
         self.start = ttk.Button(master=self.root)
-
-        self.build()
-        self.bind()
 
     def build(self):
         self.build_root()
         self.build_mode()
-        self.build_mode_label()
-        self.build_mode_edit()
+        self.build_mode_name_label()
+        self.build_mode_separator()
+        self.build_mode_description_label()
         self.build_players()
         self.build_players_view()
-        self.build_players_edit()
         self.build_start()
 
     def build_root(self):
-        text: str = PlayersTab.TEXTS["title"]
+        text: str = OverviewTab.TEXTS["title"]
         widget = self.root
         widget.configure(padding=5, takefocus=0)
         self.parent.add(child=widget, text=text)
         widget.rowconfigure(index=0, weight=1)
-        widget.rowconfigure(index=1, weight=4)
+        widget.rowconfigure(index=1, weight=3)
         widget.columnconfigure(index=0, weight=1)
 
     def build_mode(self):
         text: str = OverviewTab.TEXTS["mode"]["title"]
         widget = self.mode
         widget.configure(padding=5, text=text, takefocus=0)
+        widget.grid(row=0, column=0, sticky="nsew", pady=10)
+        widget.rowconfigure(index=0, weight=1)
+        widget.rowconfigure(index=1, weight=1)
+        widget.rowconfigure(index=2, weight=8)
+        widget.columnconfigure(index=0, weight=1)
+
+    def build_mode_name_label(self):
+        widget = self.mode_name_label
+        widget.configure(
+            padding=5, anchor="center", justify=tk.CENTER, takefocus=0
+        )
         widget.grid(row=0, column=0, sticky="nsew")
 
-    def build_mode_label(self):
-        ...
-    
-    def build_mode_edit(self):
-        ...
+    def build_mode_separator(self):
+        widget = self.mode_separator
+        widget.configure(orient=tk.HORIZONTAL, takefocus=0)
+        widget.grid(row=1, column=0, sticky="nsew")
+
+    def build_mode_description_label(self):
+        widget = self.mode_description_label
+        widget.configure(
+            padding=5, anchor="center", justify=tk.CENTER, takefocus=0
+        )
+        widget.grid(row=2, column=0, sticky="nsew")
 
     def build_players(self):
         text: str = OverviewTab.TEXTS["players"]["title"]
         widget = self.players
         widget.configure(padding=5, text=text, takefocus=0)
-        widget.grid(row=1, column=0, sticky="nsew")
+        widget.grid(row=1, column=0, sticky="nsew", pady=10)
+        widget.rowconfigure(index=0, weight=1)
+        widget.columnconfigure(index=0, weight=1)
 
     def build_players_view(self):
-        ...
-    
-    def build_players_edit(self):
-        ...
+        texts: dict[str, str] = PlayersTab.TEXTS["view"]["columns"]
+        widget = self.players_view
+
+        widget.configure(
+            columns=list(texts)[1:], selectmode="none", takefocus=0
+        )
+        widget.grid(row=0, column=0, sticky="nsew")
+        widget.column(column="#0", stretch=tk.NO)
+        widget.column(column="player", anchor="w")
+
+        for key, value in texts.items():
+            widget.heading(column=key, text=value)
 
     def build_start(self):
         text: str = OverviewTab.TEXTS["start"]["title"]
@@ -527,30 +564,45 @@ class OverviewTab(BaseTab):
         widget.grid(row=2, column=0, sticky="nsew")
 
     def bind(self):
-        self.bind_mode_edit()
-        self.bind_players_edit()
+        self.bind_mode_name_label()
+        self.bind_mode_description_label()
         self.bind_start()
 
-    def bind_mode_edit(self):
-        self.mode_edit.configure(command=self.handle_mode_edit)
+    def bind_mode_name_label(self):
+        self.mode_name_label.configure(
+            textvariable=PregameWindow.mode_name
+        )
 
-    def bind_players_edit(self):
-        self.players_edit.configure(command=self.handle_players_edit)
+    def bind_mode_description_label(self):
+        self.mode_description_label.configure(
+            textvariable=PregameWindow.mode_description
+        )
 
     def bind_start(self):
         self.start.configure(command=self.handle_start)
 
     def handle_change_to_self(self, event: tk.Event = None):
+        self.update_players_view()
+        self.toggle_start()
         self.start.focus_set()
-
-    def handle_mode_edit(self, event: tk.Event = None):
-        ...
-    
-    def handle_players_edit(self, event: tk.Event = None):
         ...
     
     def handle_start(self, event: tk.Event = None):
         ...
+
+    def update_players_view(self):
+        for item in self.players_view.get_children():
+            self.players_view.delete(item)
+        for position, player in enumerate(PregameWindow.players, start=1):
+            self.players_view.insert(
+                parent="", index=tk.END, text=position, values=(player,)
+            )
+
+    def toggle_start(self):
+        if not PregameWindow.mode_name.get() or not PregameWindow.players:
+            self.start.state(["disabled"])
+        else:
+            self.start.state(["!disabled"])
 
 
 class PregameWindow():
@@ -559,7 +611,8 @@ class PregameWindow():
     """
 
     # Temporary, to be defined somewhere/-how else once I know a better way.
-    mode = ""
+    mode_name: tk.StringVar = None
+    mode_description: tk.StringVar = None
     players: list[str] = []
     PLAYER_LIMIT = 8
 
@@ -586,12 +639,15 @@ class PregameWindow():
         self.go_to_previous_tab = ttk.Button(master=self.bottom_bar)
         self.go_to_next_tab = ttk.Button(master=self.bottom_bar)
 
-        self.build()
-        self.bind()
+        PregameWindow.mode_name = tk.StringVar()
+        PregameWindow.mode_description = tk.StringVar()
 
     def build(self):
         self.build_root()
         self.build_notebook()
+        self.modes_tab.build()
+        self.players_tab.build()
+        self.overview_tab.build()
         self.build_bottom_bar()
         self.build_go_to_previous_tab()
         self.build_go_to_next_tab()
@@ -632,6 +688,9 @@ class PregameWindow():
 
     def bind(self):
         self.bind_notebook()
+        self.modes_tab.bind()
+        self.players_tab.bind()
+        self.overview_tab.bind()
         self.bind_go_to_previous_tab()
         self.bind_go_to_next_tab()
 
@@ -647,7 +706,7 @@ class PregameWindow():
         widget.configure(command=self.handle_go_to_next_tab)
 
     def handle_tab_changed(self, event: tk.Event = None):
-        self.organize_controls()
+        self.toggle_controls()
         for tab in self.get_tabs():
             if tab.is_active():
                 tab.handle_change_to_self()
@@ -675,7 +734,7 @@ class PregameWindow():
     def change_to_tab(self, tab_id):
         self.notebook.select(tab_id)
 
-    def organize_controls(self):
+    def toggle_controls(self):
         index = self.notebook.index("current")
 
         if index == 0:

@@ -14,6 +14,7 @@ class PyDarts():
         self.pregame_window = windows.PregameWindow(parent=self.root)
         self.build()
         self.show()
+        self.bind()
 
         if enable_debugging:
             self.configure_debugging()
@@ -21,6 +22,7 @@ class PyDarts():
     def build(self):
         self.build_app()
         self.build_root()
+        self.pregame_window.build()
 
     def build_app(self):
         app = self.app
@@ -46,6 +48,9 @@ class PyDarts():
 
     def show(self):
         self.pregame_window.root.grid(row=0, column=0, sticky="nsew")
+
+    def bind(self):
+        self.pregame_window.bind()
 
     # [TODO]: display grid cell borders
     def configure_debugging(self):

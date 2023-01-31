@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from abc import ABC, abstractmethod
 
-import modules.games as games
+from pydarts.core import games
 
 
 class BaseTab(ABC):

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=67.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydarts"
+version = "0.0.1.dev1"
+authors = [
+  { name="Martin Neufeld" },
+]
+description = "This is a python app for tracking the score of a Darts game."
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/shyguys/pydarts"
+"Bug Tracker" = "https://github.com/shyguys/pydarts/issues"

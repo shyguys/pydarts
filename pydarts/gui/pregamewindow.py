@@ -7,6 +7,8 @@ from pydarts.core import games
 
 
 class Data():
+    PLAYER_LIMIT = 8
+
     def __init__(self):
         self._players = tkh.ListVar()
         self._games_metadata = games.METADATA
@@ -437,7 +439,7 @@ class PlayersTab(BaseTab):
         if player_name in players:
             return False
 
-        if len(players) == PregameWindow.PLAYER_LIMIT:
+        if len(players) == Data.PLAYER_LIMIT:
             return False
         return True
 
@@ -627,9 +629,6 @@ class PregameWindow():
     """
     tbc
     """
-
-    # Temporary, to be defined somewhere/-how else once I know a better way.
-    PLAYER_LIMIT = 8
 
     # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {

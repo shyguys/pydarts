@@ -2,6 +2,28 @@ import tkinter as tk
 from typing import Generator
 
 
+class ListVar():
+    def __init__(self):
+        self._list_var = tk.StringVar()
+        self._list = []
+    
+    def get(self) -> list[str]:
+        return self._list.copy()
+    
+    def set(self, players: list[str]):
+        self._list = players
+        self._list_var.set(players)
+    
+    def trace_add(self, *args, **kwargs):
+        self._list_var.trace_add(*args, **kwargs)
+
+    def trace_info(self):
+        self._list_var.trace_info()
+
+    def trace_remove(self, *args, **kwargs):
+        self._list_var.trace_remove(*args, **kwargs)
+
+
 def walk_children(widget: tk.Widget, max_depth: int = -1) \
     -> Generator[tk.Widget, None, None]:
 

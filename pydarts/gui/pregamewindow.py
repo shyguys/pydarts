@@ -2,7 +2,27 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from abc import ABC, abstractmethod
 
+import pydarts.gui.tkhelper as tkh
 from pydarts.core import games
+
+
+class Data():
+    def __init__(self):
+        self._players = tkh.ListVar()
+        self._games_metadata = games.METADATA
+        self._mode_id = tk.StringVar()
+    
+    @property
+    def players(self) -> tkh.ListVar:
+        return self._players
+
+    @property
+    def games_metadata(self) -> games.Metadata:
+        return self._games_metadata
+
+    @property
+    def mode_id(self) -> tk.StringVar:
+        return self._mode_id
 
 
 class BaseTab(ABC):
@@ -40,9 +60,10 @@ class ModesTab(BaseTab):
         }
     }
 
-    def __init__(self, parent: ttk.Notebook):
+    def __init__(self, parent: ttk.Notebook, data: Data):
         self.parent = parent
         self.root = ttk.Frame(master=self.parent)
+        self._data = data
 
         self.view = ttk.Treeview(master=self.root)
 
@@ -73,7 +94,7 @@ class ModesTab(BaseTab):
         for key, value in texts.items():
             widget.heading(column=key, text=value)
 
-        for game in games.METADATA.games:
+        for game in self._data._games_metadata.games:
             widget.insert(
                 parent="", index=tk.END, text=game.display_name,
                 values=(game.description,)
@@ -90,10 +111,10 @@ class ModesTab(BaseTab):
 
     def handle_selection(self, event: tk.Event = None):
         item = self.view.selection()[0]
-        PregameWindow.mode_name.set(self.view.item(item, option="text"))
-        PregameWindow.mode_description.set(
-            self.view.item(item, option="values")[0]
-        )
+        index = self.view.index(item)
+        mode_id = self._data.games_metadata.games[index].id
+        print(f"{mode_id = }")
+        self._data.mode_id.set(mode_id)
 
 
 class PlayersTab(BaseTab):
@@ -138,9 +159,10 @@ class PlayersTab(BaseTab):
         }
     }
 
-    def __init__(self, parent: ttk.Notebook):
+    def __init__(self, parent: ttk.Notebook, data: Data):
         self.parent = parent
         self.root = ttk.Frame(master=self.parent)
+        self._data = data
 
         self.prompt = ttk.Frame(master=self.root)
         self.label = ttk.Label(master=self.prompt)
@@ -282,6 +304,7 @@ class PlayersTab(BaseTab):
 
     def bind_view(self):
         self.view.bind("<<TreeviewSelect>>", self.handle_selection)
+        self._data.players.trace_add("write", self.handle_players_write)
 
     def bind_move_top(self):
         self.move_top.configure(command=self.handle_move_top)
@@ -314,9 +337,9 @@ class PlayersTab(BaseTab):
             # [TODO] notify user somehow
             return None
 
-        PregameWindow.players.append(player_name)
-        self.update_view()
-        self.toggle_controls()
+        players = self._data.players.get()
+        players.append(player_name)
+        self._data.players.set(players)
         return None
 
     def handle_selection(self, event: tk.Event = None) -> None:
@@ -338,10 +361,9 @@ class PlayersTab(BaseTab):
             return None
 
         selected_index = self.view.index(selected_item)
-        PregameWindow.players.insert(
-            0, PregameWindow.players.pop(selected_index)
-        )
-        self.update_view()
+        players = self._data.players.get()
+        players.insert(0, players.pop(selected_index))
+        self._data.players.set(players)
         self.view.selection_set(self.view.get_children()[0])
         return None
 
@@ -356,10 +378,9 @@ class PlayersTab(BaseTab):
 
         selected_index = self.view.index(selected_item)
         new_index = selected_index-1
-        PregameWindow.players.insert(
-            new_index, PregameWindow.players.pop(selected_index)
-        )
-        self.update_view()
+        players = self._data.players.get()
+        players.insert(new_index, players.pop(selected_index))
+        self._data.players.set(players)
         self.view.selection_set(self.view.get_children()[new_index])
         return None
 
@@ -374,10 +395,9 @@ class PlayersTab(BaseTab):
 
         selected_index = self.view.index(selected_item)
         new_index = selected_index+1
-        PregameWindow.players.insert(
-            new_index, PregameWindow.players.pop(selected_index)
-        )
-        self.update_view()
+        players = self._data.players.get()
+        players.insert(new_index, players.pop(selected_index))
+        self._data.players.set(players)
         self.view.selection_set(self.view.get_children()[new_index])
         return None
 
@@ -390,10 +410,10 @@ class PlayersTab(BaseTab):
         if selected_item is self.view.get_children()[-1]:
             return None
 
-        PregameWindow.players.append(
-            PregameWindow.players.pop(self.view.index(selected_item))
-        )
-        self.update_view()
+        selected_index = self.view.index(selected_item)
+        players = self._data.players.get()
+        players.append(players.pop(selected_index))
+        self._data.players.set(players)
         self.view.selection_set(self.view.get_children()[-1])
         return None
 
@@ -404,26 +424,33 @@ class PlayersTab(BaseTab):
 
         selected_item = self.view.selection()[0]
         selected_index = self.view.index(selected_item)
-        PregameWindow.players.pop(selected_index)
-        self.update_view()
+        players = self._data.players.get()
+        players.pop(selected_index)
+        self._data.players.set(players)
 
         if not self.view.get_children():
-            self.toggle_controls()
+            self.entry.focus_set()
             return None
         
         new_index = selected_index
         if new_index > len(self.view.get_children())-1:
             new_index = new_index-1
         self.view.selection_set(self.view.get_children()[new_index])
-        self.toggle_controls()
         return None
+
+    def handle_players_write(self, *args):
+        self.update_view()
+        self.toggle_controls()
 
     def is_valid_player_name(self, player_name: str) -> bool:
         if not player_name:
             return False
-        if player_name in PregameWindow.players:
+
+        players = self._data.players.get()
+        if player_name in players:
             return False
-        if len(PregameWindow.players) == PregameWindow.PLAYER_LIMIT:
+
+        if len(players) == PregameWindow.PLAYER_LIMIT:
             return False
         return True
 
@@ -435,7 +462,7 @@ class PlayersTab(BaseTab):
                 and control.master is self.controls
         ]
 
-        if len(PregameWindow.players) == 0:
+        if len(self._data.players.get()) == 0:
             for control in controls:
                 control.state(["disabled"])
         else:
@@ -445,7 +472,7 @@ class PlayersTab(BaseTab):
     def update_view(self):
         for item in self.view.get_children():
             self.view.delete(item)
-        for position, player in enumerate(PregameWindow.players, start=1):
+        for position, player in enumerate(self._data.players.get(), start=1):
             self.view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
@@ -473,9 +500,10 @@ class OverviewTab(BaseTab):
         }
     }
 
-    def __init__(self, parent: ttk.Notebook):
+    def __init__(self, parent: ttk.Notebook, data: Data):
         self.parent = parent
         self.root = ttk.Frame(master=self.parent)
+        self._data = data
 
         self.mode = ttk.Labelframe(master=self.root)
         self.mode_name_label = ttk.Label(master=self.mode)
@@ -564,25 +592,20 @@ class OverviewTab(BaseTab):
         widget.grid(row=2, column=0, sticky="nsew")
 
     def bind(self):
-        self.bind_mode_name_label()
-        self.bind_mode_description_label()
+        self.bind_mode()
+        self.bind_players_view()
         self.bind_start()
 
-    def bind_mode_name_label(self):
-        self.mode_name_label.configure(
-            textvariable=PregameWindow.mode_name
-        )
+    def bind_mode(self):
+        self._data.mode_id.trace_add("write", self.handle_mode_id_write)
 
-    def bind_mode_description_label(self):
-        self.mode_description_label.configure(
-            textvariable=PregameWindow.mode_description
-        )
+    def bind_players_view(self):
+        self._data.players.trace_add("write", self.handle_players_write)
 
     def bind_start(self):
         self.start.configure(command=self.handle_start)
 
     def handle_change_to_self(self, event: tk.Event = None):
-        self.update_players_view()
         self.toggle_start()
         self.start.focus_set()
         ...
@@ -590,16 +613,24 @@ class OverviewTab(BaseTab):
     def handle_start(self, event: tk.Event = None):
         ...
 
+    def handle_mode_id_write(self, *args):
+        game = self._data.games_metadata.get_game(self._data.mode_id.get())
+        self.mode_name_label.configure(text=game.display_name)
+        self.mode_description_label.configure(text=game.description)
+
+    def handle_players_write(self, *args):
+        self.update_players_view()
+
     def update_players_view(self):
         for item in self.players_view.get_children():
             self.players_view.delete(item)
-        for position, player in enumerate(PregameWindow.players, start=1):
+        for position, player in enumerate(self._data.players.get(), start=1):
             self.players_view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
 
     def toggle_start(self):
-        if not PregameWindow.mode_name.get() or not PregameWindow.players:
+        if not self._data.mode_id.get() or not self._data.players.get():
             self.start.state(["disabled"])
         else:
             self.start.state(["!disabled"])
@@ -611,9 +642,6 @@ class PregameWindow():
     """
 
     # Temporary, to be defined somewhere/-how else once I know a better way.
-    mode_name: tk.StringVar = None
-    mode_description: tk.StringVar = None
-    players: list[str] = []
     PLAYER_LIMIT = 8
 
     # Temporary, to be defined somewhere/-how else once I know a better way.
@@ -629,18 +657,16 @@ class PregameWindow():
     def __init__(self, parent = ttk.Frame):
         self.parent = parent
         self.root = ttk.Frame(master=self.parent)
+        self._data = Data()
 
         self.notebook = ttk.Notebook(master=self.root)
-        self.modes_tab = ModesTab(parent=self.notebook)
-        self.players_tab = PlayersTab(parent=self.notebook)
-        self.overview_tab = OverviewTab(parent=self.notebook)
+        self.modes_tab = ModesTab(parent=self.notebook, data=self._data)
+        self.players_tab = PlayersTab(parent=self.notebook, data=self._data)
+        self.overview_tab = OverviewTab(parent=self.notebook, data=self._data)
 
         self.bottom_bar = ttk.Frame(master=self.root)
         self.go_to_previous_tab = ttk.Button(master=self.bottom_bar)
         self.go_to_next_tab = ttk.Button(master=self.bottom_bar)
-
-        PregameWindow.mode_name = tk.StringVar()
-        PregameWindow.mode_description = tk.StringVar()
 
     def build(self):
         self.build_root()

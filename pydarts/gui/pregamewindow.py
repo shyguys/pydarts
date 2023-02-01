@@ -113,7 +113,6 @@ class ModesTab(BaseTab):
         item = self.view.selection()[0]
         index = self.view.index(item)
         mode_id = self._data.games_metadata.games[index].id
-        print(f"{mode_id = }")
         self._data.mode_id.set(mode_id)
 
 
@@ -178,8 +177,6 @@ class PlayersTab(BaseTab):
         self.move_down = ttk.Button(master=self.controls)
         self.move_bottom = ttk.Button(master=self.controls)
         self.remove = ttk.Button(master=self.controls)
-
-        self.selected_player = ""
 
     def build(self):
         self.build_root()
@@ -303,7 +300,6 @@ class PlayersTab(BaseTab):
         self.add.configure(command=self.handle_add)
 
     def bind_view(self):
-        self.view.bind("<<TreeviewSelect>>", self.handle_selection)
         self._data.players.trace_add("write", self.handle_players_write)
 
     def bind_move_top(self):
@@ -340,15 +336,6 @@ class PlayersTab(BaseTab):
         players = self._data.players.get()
         players.append(player_name)
         self._data.players.set(players)
-        return None
-
-    def handle_selection(self, event: tk.Event = None) -> None:
-        selection = self.view.selection()
-        if not selection:
-            self.selected_player = None
-            return None
-        
-        self.selected_player = self.view.item(selection[0], option="text")
         return None
 
     def handle_move_top(self, event: tk.Event = None):

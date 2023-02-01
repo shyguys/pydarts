@@ -7,6 +7,7 @@ class PyDarts():
     def __init__(self):
         self.args = self._parse_args()
         self.app = appwindow.AppWindow("PyDarts")
+        self._configure_logging()
 
     def run(self):
         self.app.run(self.args.debug)

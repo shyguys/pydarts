@@ -349,7 +349,7 @@ class PlayersTab(BaseTab):
         if index == 0:
             return None
 
-        self._swap_player_positions(index, 0)
+        self._move_player(index, 0)
         return None
 
     def handle_move_up(self, event: tk.Event = None):
@@ -361,7 +361,7 @@ class PlayersTab(BaseTab):
         if index == 0:
             return None
 
-        self._swap_player_positions(index, index-1)
+        self._move_player(index, index-1)
         return None
 
     def handle_move_down(self, event: tk.Event = None):
@@ -373,7 +373,7 @@ class PlayersTab(BaseTab):
         if index == len(self.view.get_children())-1:
             return None
 
-        self._swap_player_positions(index, index+1)
+        self._move_player(index, index+1)
         return None
 
     def handle_move_bottom(self, event: tk.Event = None):
@@ -386,7 +386,7 @@ class PlayersTab(BaseTab):
         if index == last_index:
             return None
 
-        self._swap_player_positions(index, last_index)
+        self._move_player(index, last_index)
         return None
 
     def handle_remove(self, event: tk.Event = None) -> None:
@@ -427,7 +427,7 @@ class PlayersTab(BaseTab):
             return False
         return True
 
-    def _swap_player_positions(self, current_index: int, new_index: int):
+    def _move_player(self, current_index: int, new_index: int):
         players = self._data.players.get()
         players.insert(new_index, players.pop(current_index))
         self._data.players.set(players)

@@ -345,15 +345,11 @@ class PlayersTab(BaseTab):
         if not selection:
             return None
 
-        selected_item = self.view.selection()[0]
-        if selected_item is self.view.get_children()[0]:
+        index = self.view.index(self.view.selection()[0])
+        if index == 0:
             return None
 
-        selected_index = self.view.index(selected_item)
-        players = self._data.players.get()
-        players.insert(0, players.pop(selected_index))
-        self._data.players.set(players)
-        self.view.selection_set(self.view.get_children()[0])
+        self._swap_player_positions(index, 0)
         return None
 
     def handle_move_up(self, event: tk.Event = None):
@@ -361,16 +357,11 @@ class PlayersTab(BaseTab):
         if not selection:
             return None
 
-        selected_item = self.view.selection()[0]
-        if selected_item is self.view.get_children()[0]:
+        index = self.view.index(self.view.selection()[0])
+        if index == 0:
             return None
 
-        selected_index = self.view.index(selected_item)
-        new_index = selected_index-1
-        players = self._data.players.get()
-        players.insert(new_index, players.pop(selected_index))
-        self._data.players.set(players)
-        self.view.selection_set(self.view.get_children()[new_index])
+        self._swap_player_positions(index, index-1)
         return None
 
     def handle_move_down(self, event: tk.Event = None):
@@ -378,16 +369,11 @@ class PlayersTab(BaseTab):
         if not selection:
             return None
 
-        selected_item = self.view.selection()[0]
-        if selected_item is self.view.get_children()[-1]:
+        index = self.view.index(self.view.selection()[0])
+        if index == len(self.view.get_children())-1:
             return None
 
-        selected_index = self.view.index(selected_item)
-        new_index = selected_index+1
-        players = self._data.players.get()
-        players.insert(new_index, players.pop(selected_index))
-        self._data.players.set(players)
-        self.view.selection_set(self.view.get_children()[new_index])
+        self._swap_player_positions(index, index+1)
         return None
 
     def handle_move_bottom(self, event: tk.Event = None):
@@ -395,15 +381,12 @@ class PlayersTab(BaseTab):
         if not selection:
             return None
 
-        selected_item = self.view.selection()[0]
-        if selected_item is self.view.get_children()[-1]:
+        index = self.view.index(self.view.selection()[0])
+        last_index = len(self.view.get_children())-1
+        if index == last_index:
             return None
 
-        selected_index = self.view.index(selected_item)
-        players = self._data.players.get()
-        players.append(players.pop(selected_index))
-        self._data.players.set(players)
-        self.view.selection_set(self.view.get_children()[-1])
+        self._swap_player_positions(index, last_index)
         return None
 
     def handle_remove(self, event: tk.Event = None) -> None:
@@ -411,19 +394,20 @@ class PlayersTab(BaseTab):
         if not selection:
             return None
 
-        selected_item = self.view.selection()[0]
-        selected_index = self.view.index(selected_item)
+        index = self.view.index(self.view.selection()[0])
         players = self._data.players.get()
-        players.pop(selected_index)
+        players.pop(index)
         self._data.players.set(players)
 
         if not self.view.get_children():
             self.entry.focus_set()
             return None
         
-        new_index = selected_index
-        if new_index > len(self.view.get_children())-1:
-            new_index = new_index-1
+        if index == len(self.view.get_children()):
+            new_index = index-1
+        else:
+            new_index = index
+
         self.view.selection_set(self.view.get_children()[new_index])
         return None
 
@@ -442,6 +426,12 @@ class PlayersTab(BaseTab):
         if len(players) == Data.PLAYER_LIMIT:
             return False
         return True
+
+    def _swap_player_positions(self, current_index: int, new_index: int):
+        players = self._data.players.get()
+        players.insert(new_index, players.pop(current_index))
+        self._data.players.set(players)
+        self.view.selection_set(self.view.get_children()[new_index])
 
     def toggle_controls(self):
         controls = [

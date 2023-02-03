@@ -18,29 +18,31 @@ class MetadataElement():
     description: str
 
 
-@dataclass(frozen=True)
 class Metadata():
     """
     The metadata of all games. Purpose of this class is to provide
     a flexible and scalable interface between GUI and game classes.
     """
 
-    games: tuple[MetadataElement]
+    _games = (
+        MetadataElement("301", "301", "Wirf exakt 301 Punkte."),
+        MetadataElement("501", "501", "Wirf exakt 501 Punkte.")
+    )
 
-    def get_ids(self) -> list[str]:
-        return [game.id for game in self.games]
+    @classmethod
+    def get_games(cls) -> tuple[MetadataElement]:
+        return cls._games
 
-    def get_game(self, id: str) -> MetadataElement:
-        for game in self.games:
+    @classmethod
+    def get_ids(cls) -> list[str]:
+        return [game.id for game in cls.get_games()]
+
+    @classmethod
+    def get_game(cls, id: str) -> MetadataElement:
+        for game in cls.get_games():
             if game.id == id:
                 return game
         raise GameIdError(id)
-
-
-METADATA = Metadata((
-    MetadataElement("301", "301", "Wirf exakt 301 Punkte."),
-    MetadataElement("501", "501", "Wirf exakt 501 Punkte.")
-))
 
 
 class BaseGame(ABC):
@@ -53,12 +55,12 @@ class BaseGame(ABC):
 
 class Game301(BaseGame):
     def __init__(self) -> None:
-        super().__init__(METADATA.get_game("301"))
+        super().__init__(Metadata.get_game("301"))
 
 
 class Game501(BaseGame):
     def __init__(self) -> None:
-        super().__init__(METADATA.get_game("501"))
+        super().__init__(Metadata.get_game("501"))
 
 
 def build_game_for(id: str) -> BaseGame:

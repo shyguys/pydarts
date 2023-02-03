@@ -10,27 +10,27 @@ class _Data():
     tbc
     """
 
-    def __init__(self):
-        self._player_limit = 8
-        self._players = tkh.ListVar()
-        self._games_metadata = games.METADATA
-        self._mode_id = tk.StringVar()
+    _mode_id: tk.StringVar
+    _player_limit: int
+    _players: tkh.ListVar
     
-    @property
-    def player_limit(self) -> int:
-        return self._player_limit
+    @classmethod
+    def init(cls):
+        cls._mode_id = tk.StringVar()
+        cls._player_limit = 8
+        cls._players = tkh.ListVar()
 
-    @property
-    def players(self) -> tkh.ListVar:
-        return self._players
+    @classmethod
+    def get_mode_id(cls) -> tk.StringVar:
+        return cls._mode_id
 
-    @property
-    def games_metadata(self) -> games.Metadata:
-        return self._games_metadata
+    @classmethod
+    def get_player_limit(cls) -> int:
+        return cls._player_limit
 
-    @property
-    def mode_id(self) -> tk.StringVar:
-        return self._mode_id
+    @classmethod
+    def get_players(cls) -> tkh.ListVar:
+        return cls._players
 
 
 class ModesTab(tkh.BaseTab):
@@ -49,9 +49,8 @@ class ModesTab(tkh.BaseTab):
         }
     }
 
-    def __init__(self, data: _Data, parent: ttk.Notebook):
+    def __init__(self, parent: ttk.Notebook):
         super().__init__(parent)
-        self.data = data
 
         self._view = ttk.Treeview(master=self.root)
 
@@ -82,7 +81,7 @@ class ModesTab(tkh.BaseTab):
         for key, value in texts.items():
             widget.heading(column=key, text=value)
 
-        for game in self.data._games_metadata.games:
+        for game in games.Metadata.get_games():
             widget.insert(
                 parent="", index=tk.END, text=game.display_name,
                 values=(game.description,)
@@ -97,8 +96,8 @@ class ModesTab(tkh.BaseTab):
     def _handle_selection(self, event: tk.Event = None):
         item = self._view.selection()[0]
         index = self._view.index(item)
-        mode_id = self.data.games_metadata.games[index].id
-        self.data.mode_id.set(mode_id)
+        mode_id = games.Metadata.get_games()[index].id
+        _Data.get_mode_id().set(mode_id)
 
 
 class PlayersTab(tkh.BaseTab):
@@ -143,9 +142,8 @@ class PlayersTab(tkh.BaseTab):
         }
     }
 
-    def __init__(self, data: _Data, parent: ttk.Notebook):
+    def __init__(self, parent: ttk.Notebook):
         super().__init__(parent)
-        self.data = data
 
         self._prompt = ttk.Frame(master=self.root)
         self._label = ttk.Label(master=self._prompt)
@@ -275,7 +273,7 @@ class PlayersTab(tkh.BaseTab):
         self._bind_remove()
 
     def _bind_players_var(self):
-        self.data.players.trace_add("write", self._handle_players_write)
+        _Data.get_players().trace_add("write", self._handle_players_write)
 
     def _bind_entry(self):
         self._entry.configure(textvariable=self._player_to_add)
@@ -321,9 +319,9 @@ class PlayersTab(tkh.BaseTab):
             # [TODO] notify user somehow
             return None
 
-        players = self.data.players.get()
+        players = _Data.get_players().get()
         players.append(player_name)
-        self.data.players.set(players)
+        _Data.get_players().set(players)
         return None
 
     def _handle_move_top(self, event: tk.Event = None):
@@ -381,9 +379,9 @@ class PlayersTab(tkh.BaseTab):
             return None
 
         index = self.view.index(self.view.selection()[0])
-        players = self.data.players.get()
+        players = _Data.get_players().get()
         players.pop(index)
-        self.data.players.set(players)
+        _Data.get_players().set(players)
 
         if not self.view.get_children():
             self._entry.focus_set()
@@ -401,18 +399,18 @@ class PlayersTab(tkh.BaseTab):
         if not player_name:
             return False
 
-        players = self.data.players.get()
+        players = _Data.get_players().get()
         if player_name in players:
             return False
 
-        if len(players) == self.data.player_limit:
+        if len(players) == _Data.get_player_limit():
             return False
         return True
 
     def _move_player(self, current_index: int, new_index: int):
-        players = self.data.players.get()
+        players = _Data.get_players().get()
         players.insert(new_index, players.pop(current_index))
-        self.data.players.set(players)
+        _Data.get_players().set(players)
         self.view.selection_set(self.view.get_children()[new_index])
 
     def _toggle_controls(self):
@@ -423,7 +421,7 @@ class PlayersTab(tkh.BaseTab):
                 and control.master is self._controls
         ]
 
-        if len(self.data.players.get()) == 0:
+        if len(_Data.get_players().get()) == 0:
             for control in controls:
                 control.state(["disabled"])
         else:
@@ -433,7 +431,7 @@ class PlayersTab(tkh.BaseTab):
     def _update_view(self):
         for item in self.view.get_children():
             self.view.delete(item)
-        for position, player in enumerate(self.data.players.get(), start=1):
+        for position, player in enumerate(_Data.get_players().get(), start=1):
             self.view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
@@ -461,9 +459,8 @@ class OverviewTab(tkh.BaseTab):
         }
     }
 
-    def __init__(self, data: _Data, parent: ttk.Notebook):
+    def __init__(self, parent: ttk.Notebook):
         super().__init__(parent)
-        self.data = data
 
         self._mode = ttk.Labelframe(master=self.root)
         self._mode_name_label = ttk.Label(master=self._mode)
@@ -557,10 +554,10 @@ class OverviewTab(tkh.BaseTab):
         self._bind_start()
     
     def _bind_mode_id_var(self):
-        self.data.mode_id.trace_add("write", self._handle_mode_id_write)
+        _Data.get_mode_id().trace_add("write", self._handle_mode_id_write)
         
     def _bind_players_var(self):
-        self.data.players.trace_add("write", self._handle_players_write)
+        _Data.get_players().trace_add("write", self._handle_players_write)
         
     def _bind_start(self):
         self._start.configure(command=self._handle_start)
@@ -574,7 +571,7 @@ class OverviewTab(tkh.BaseTab):
         print(OverviewTab.TEXTS["start"]["title"])
 
     def _handle_mode_id_write(self, *args):
-        game = self.data.games_metadata.get_game(self.data.mode_id.get())
+        game = games.Metadata.get_game(_Data.get_mode_id().get())
         self._mode_name_label.configure(text=game.display_name)
         self._mode_description_label.configure(text=game.description)
 
@@ -584,13 +581,13 @@ class OverviewTab(tkh.BaseTab):
     def _update_players_view(self):
         for item in self._players_view.get_children():
             self._players_view.delete(item)
-        for position, player in enumerate(self.data.players.get(), start=1):
+        for position, player in enumerate(_Data.get_players().get(), start=1):
             self._players_view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
 
     def _toggle_start(self):
-        if not self.data.mode_id.get() or not self.data.players.get():
+        if not _Data.get_mode_id().get() or not _Data.get_players().get():
             self._start.state(["disabled"])
         else:
             self._start.state(["!disabled"])
@@ -613,12 +610,12 @@ class PregameWindow(tkh.BaseWidget):
 
     def __init__(self, parent: ttk.Frame):
         super().__init__(parent)
-        self.data = _Data()
+        _Data.init()
 
         self._notebook = ttk.Notebook(master=self.root)
-        self._modes_tab = ModesTab(self.data, self._notebook)
-        self._players_tab = PlayersTab(self.data, self._notebook)
-        self._overview_tab = OverviewTab(self.data, self._notebook)
+        self._modes_tab = ModesTab(self._notebook)
+        self._players_tab = PlayersTab(self._notebook)
+        self._overview_tab = OverviewTab(self._notebook)
 
         self._bottom_bar = ttk.Frame(master=self.root)
         self._go_to_previous_tab = ttk.Button(master=self._bottom_bar)

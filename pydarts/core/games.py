@@ -24,10 +24,18 @@ class Metadata():
     a flexible and scalable interface between GUI and game classes.
     """
 
-    _games = (
-        MetadataElement("301", "301", "Wirf exakt 301 Punkte."),
-        MetadataElement("501", "501", "Wirf exakt 501 Punkte.")
-    )
+    _games: tuple[MetadataElement]
+
+    @classmethod
+    def load(cls):
+        cls._games = (
+            MetadataElement("301", "301", "Wirf exakt 301 Punkte."),
+            MetadataElement("501", "501", "Wirf exakt 501 Punkte."),
+            MetadataElement(
+                "around_the_clock", "Around the Clock",
+                "Wirf der Reihe nach von 1 bis Bull's-eye"
+            )
+        )
 
     @classmethod
     def get_games(cls) -> tuple[MetadataElement]:

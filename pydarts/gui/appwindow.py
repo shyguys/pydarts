@@ -2,6 +2,8 @@ import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 
+from pydarts.core import games
+from pydarts.gui import pregamewindow
 from pydarts.gui import tkhelper as tkh
 
 
@@ -9,17 +11,18 @@ class AppWindow():
     def __init__(self, name: str):
         self._name = name
         self._app = tk.Tk()
-        from pydarts.gui import pregamewindow
         self._root = ttk.Frame(master=self._app)
         self._pregame_window = pregamewindow.PregameWindow(self._root)
-        self._build()
-        self._bind()
 
     def run(self, debug: bool = False):
+        games.Metadata.load()
+        self._build()
+        self._bind()
+        self._show()
+
         if debug:
             self._configure_debugging()
 
-        self._show()
         self._app.mainloop()
 
     def _build(self):

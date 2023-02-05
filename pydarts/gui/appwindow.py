@@ -2,7 +2,6 @@ import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 
-from pydarts.core import games
 from pydarts.gui import pregamewindow
 from pydarts.gui import tkhelper as tkh
 
@@ -15,7 +14,6 @@ class AppWindow():
         self._pregame_window = pregamewindow.PregameWindow(self._root)
 
     def run(self, debug: bool = False):
-        games.Metadata.load()
         self._build()
         self._bind()
         self._show()
@@ -56,7 +54,14 @@ class AppWindow():
         self._pregame_window.root.grid(row=0, column=0, sticky="nsew")
 
     def _bind(self):
+        self._bind_root()
         self._pregame_window.bind()
+
+    def _bind_root(self):
+        self._root.bind(
+            tkh.CustomEvent.PREGAME_WINDOW_FINISHED.value,
+            self._handle_pregame_window_finished
+        )
 
     # [TODO]: display grid cell borders
     def _configure_debugging(self):
@@ -82,3 +87,7 @@ class AppWindow():
             f"  event: {event!r}\n"
             f"  widget: {event.widget!r}"
         )
+
+    def _handle_pregame_window_finished(self):
+        self._pregame_window = None
+        print("apw._handle_pregame_window_finished")

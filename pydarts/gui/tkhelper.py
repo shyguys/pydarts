@@ -1,6 +1,12 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+from enum import Enum
 from typing import Generator
+
+
+class CustomEvent(Enum):
+    OVERVIEW_TAB_FINISHED = "<<OverviewTabFinished>>"
+    PREGAME_WINDOW_FINISHED = "<<PregameWindowFinished>>"
 
 
 class BaseWidget():

@@ -2,8 +2,8 @@ import tkinter as tk
 from typing import Generator
 
 
-def walk_children(widget: tk.Widget, max_depth: int = -1) \
-    -> Generator[tk.Widget, None, None]:
+def walk_children(widget: tk.Misc, max_depth: int = -1) \
+    -> Generator[tk.Misc, None, None]:
 
     children = [
         (child, max_depth) for child in reversed(widget.winfo_children())

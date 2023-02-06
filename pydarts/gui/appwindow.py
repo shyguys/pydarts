@@ -2,8 +2,8 @@ import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 
+import pydarts.help.tkh as tkh
 from pydarts.gui import pregamewindow
-from pydarts.gui import tkhelper as tkh
 
 
 class AppWindow():

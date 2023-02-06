@@ -3,7 +3,7 @@ import tkinter.ttk as ttk
 from enum import Enum
 
 import pydarts.core.metadata as metadata
-import pydarts.gui.tkhelper as tkh
+import pydarts.help.tkh as tkh
 
 
 class CustomEvent(Enum):
@@ -19,8 +19,8 @@ class _Vars():
     mode_id: tk.StringVar
     player_limit: tk.IntVar
     players: tkh.ListVar
-    is_first_tab: tk.BooleanVar
-    is_last_tab: tk.BooleanVar
+    is_first_tab_active: tk.BooleanVar
+    is_last_tab_active: tk.BooleanVar
 
     @classmethod
     def init(cls):
@@ -32,8 +32,8 @@ class _Vars():
         cls.mode_id = tk.StringVar()
         cls.player_limit = tk.IntVar()
         cls.players = tkh.ListVar()
-        cls.is_first_tab = tk.BooleanVar()
-        cls.is_last_tab = tk.BooleanVar()
+        cls.is_first_tab_active = tk.BooleanVar()
+        cls.is_last_tab_active = tk.BooleanVar()
 
 
 class _ModesTab():
@@ -677,14 +677,14 @@ class _Notebook():
         index = self._root.index("current")
 
         if index == 0:
-            _Vars.is_first_tab.set(True)
+            _Vars.is_first_tab_active.set(True)
         else:
-            _Vars.is_first_tab.set(False)
+            _Vars.is_first_tab_active.set(False)
 
         if index == self._root.index("end")-1:
-            _Vars.is_last_tab.set(True)
+            _Vars.is_last_tab_active.set(True)
         else:
-            _Vars.is_last_tab.set(False)
+            _Vars.is_last_tab_active.set(False)
         
         tabs = [self._players_tab, self._overview_tab]
         for tab in tabs:
@@ -750,11 +750,11 @@ class _BottomBar():
         self._bind_go_next()
 
     def _bind_is_first_tab_write(self):
-        var = _Vars.is_first_tab
+        var = _Vars.is_first_tab_active
         var.trace_add("write", self._handle_is_first_tab_write)
 
     def _bind_is_last_tab_write(self):
-        var = _Vars.is_last_tab
+        var = _Vars.is_last_tab_active
         var.trace_add("write", self._handle_is_last_tab_write)
 
     def _bind_go_back(self):
@@ -766,14 +766,14 @@ class _BottomBar():
         widget.configure(command=self._handle_go_next)
 
     def _handle_is_first_tab_write(self, event: tk.Event = None):
-        if _Vars.is_first_tab.get():
+        if _Vars.is_first_tab_active.get():
             state = ["disabled"]
         else:
             state = ["!disabled"]
         self._go_back.state(state)
 
     def _handle_is_last_tab_write(self, event: tk.Event = None):
-        if _Vars.is_last_tab.get():
+        if _Vars.is_last_tab_active.get():
             state = ["disabled"]
         else:
             state = ["!disabled"]

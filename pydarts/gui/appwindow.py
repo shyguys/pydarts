@@ -59,7 +59,7 @@ class AppWindow():
 
     def _bind_root(self):
         self._root.bind(
-            tkh.CustomEvent.PREGAME_WINDOW_FINISHED.value,
+            pregamewindow.CustomEvent.PREGAME_WINDOW_FINISHED.value,
             self._handle_pregame_window_finished
         )
 

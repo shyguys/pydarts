@@ -1,27 +1,42 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-from dataclasses import dataclass
+from enum import Enum
 
 import pydarts.core.metadata as metadata
 import pydarts.gui.tkhelper as tkh
 
 
-@dataclass(frozen=True)
-class Data():
+class CustomEvent(Enum):
+    OVERVIEW_TAB_FINISHED = "<<OverviewTabFinished>>"
+    PREGAME_WINDOW_FINISHED = "<<PregameWindowFinished>>"
+
+
+class _Vars():
     """
     tbc
     """
 
-    mode_id_var: tk.StringVar
-    player_limit: int
-    players_var: tkh.ListVar
+    mode_id: tk.StringVar
+    player_limit: tk.IntVar
+    players: tkh.ListVar
+    is_first_tab: tk.BooleanVar
+    is_last_tab: tk.BooleanVar
+
+    @classmethod
+    def init(cls):
+        """
+        Inititalizes variables. Has do be called
+        after the root window has been created.
+        """
+
+        cls.mode_id = tk.StringVar()
+        cls.player_limit = tk.IntVar()
+        cls.players = tkh.ListVar()
+        cls.is_first_tab = tk.BooleanVar()
+        cls.is_last_tab = tk.BooleanVar()
 
 
-class ModesTab(tkh.BaseTab):
-    """
-    tbc
-    """
-
+class _ModesTab():
     # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {
         "title": "Select mode",
@@ -33,27 +48,34 @@ class ModesTab(tkh.BaseTab):
         }
     }
 
-    def __init__(self, data: Data, parent: ttk.Notebook):
-        super().__init__(parent)
+    def __init__(self, parent: ttk.Notebook):
+        self._parent = parent
+        self._root = ttk.Frame(master=self._parent)
+        self._view = ttk.Treeview(master=self._root)
 
-        self.data = data
-        self._view = ttk.Treeview(master=self.root)
+    @property
+    def parent(self) -> ttk.Notebook:
+        return self._parent 
+
+    @property
+    def root(self) -> ttk.Frame:
+        return self._root
 
     def build(self):
         self._build_root()
         self._build_view()
 
     def _build_root(self):
-        text: str = ModesTab.TEXTS["title"]
-        widget = self.root
+        text: str = _ModesTab.TEXTS["title"]
+        widget = self._root
         widget.configure(padding=5, takefocus=0)
-        self.parent.add(child=widget, text=text)
+        self._parent.add(child=widget, text=text)
         widget.rowconfigure(index=0, weight=1)
         widget.columnconfigure(index=0, weight=1)
     
     # [TODO]: calculate width for '#0' based on longest 'name'?
     def _build_view(self):
-        texts: dict[str, str] = ModesTab.TEXTS["view"]["columns"]
+        texts: dict[str, str] = _ModesTab.TEXTS["view"]["columns"]
         widget = self._view
 
         widget.configure(
@@ -73,23 +95,19 @@ class ModesTab(tkh.BaseTab):
             )
 
     def bind(self):
-        self._view.bind("<<TreeviewSelect>>", self._handle_selection)
+        self._bind_view()
 
-    def handle_change_to_self(self, event: tk.Event = None):
-        pass
+    def _bind_view(self):
+        self._view.bind("<<TreeviewSelect>>", self._handle_selection)
 
     def _handle_selection(self, event: tk.Event = None):
         item = self._view.selection()[0]
         index = self._view.index(item)
         mode_id = metadata.Modes.get_modes()[index].id
-        self.data.mode_id_var.set(mode_id)
+        _Vars.mode_id.set(mode_id)
 
 
-class PlayersTab(tkh.BaseTab):
-    """
-    tbc
-    """
-
+class _PlayersTab():
     # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {
         "title": "Add players",
@@ -127,24 +145,32 @@ class PlayersTab(tkh.BaseTab):
         }
     }
 
-    def __init__(self, data: Data, parent: ttk.Notebook):
-        super().__init__(parent)
+    def __init__(self, parent: ttk.Notebook):
+        self._parent = parent
+        self._root = ttk.Frame(master=self._parent)
 
-        self.data = data
-        self._prompt = ttk.Frame(master=self.root)
+        self._prompt = ttk.Frame(master=self._root)
         self._label = ttk.Label(master=self._prompt)
         self._entry = ttk.Entry(master=self._prompt)
         self._add = ttk.Button(master=self._prompt)
         self._player_to_add = tk.StringVar()
 
-        self.view = ttk.Treeview(master=self.root)
+        self.view = ttk.Treeview(master=self._root)
 
-        self._controls = ttk.Frame(master=self.root)
+        self._controls = ttk.Frame(master=self._root)
         self._move_top = ttk.Button(master=self._controls)
         self._move_up = ttk.Button(master=self._controls)
         self._move_down = ttk.Button(master=self._controls)
         self._move_bottom = ttk.Button(master=self._controls)
         self._remove = ttk.Button(master=self._controls)
+
+    @property
+    def parent(self) -> ttk.Notebook:
+        return self._parent
+
+    @property
+    def root(self) -> ttk.Frame:
+        return self._root
 
     def build(self):
         self._build_root()
@@ -161,10 +187,10 @@ class PlayersTab(tkh.BaseTab):
         self._build_remove()
 
     def _build_root(self):
-        text: str = PlayersTab.TEXTS["title"]
-        widget = self.root
+        text: str = _PlayersTab.TEXTS["title"]
+        widget = self._root
         widget.configure(padding=5, takefocus=0)
-        self.parent.add(child=widget, text=text)
+        self._parent.add(child=widget, text=text)
         widget.rowconfigure(index=1, weight=1)
         widget.columnconfigure(index=0, weight=1)
 
@@ -178,7 +204,7 @@ class PlayersTab(tkh.BaseTab):
         widget.columnconfigure(index=2, weight=1)
 
     def _build_label(self):
-        text: str = PlayersTab.TEXTS["prompt"]["label"]["title"]
+        text: str = _PlayersTab.TEXTS["prompt"]["label"]["title"]
         widget = self._label
         widget.configure(text=text, takefocus=0)
         widget.grid(row=0, column=0, sticky="nse")
@@ -188,13 +214,13 @@ class PlayersTab(tkh.BaseTab):
         widget.grid(row=0, column=1, sticky="nsew", padx=5)
 
     def _build_add(self):
-        text: str = PlayersTab.TEXTS["prompt"]["add"]["title"]
+        text: str = _PlayersTab.TEXTS["prompt"]["add"]["title"]
         widget = self._add
         widget.configure(text=text)
         widget.grid(row=0, column=2, sticky="nsw")
 
     def _build_view(self):
-        texts: dict[str, str] = PlayersTab.TEXTS["view"]["columns"]
+        texts: dict[str, str] = _PlayersTab.TEXTS["view"]["columns"]
         widget = self.view
 
         widget.configure(
@@ -219,31 +245,31 @@ class PlayersTab(tkh.BaseTab):
         widget.columnconfigure(index=4, weight=1)
 
     def _build_move_top(self):
-        text: str = PlayersTab.TEXTS["controls"]["move_top"]["title"]
+        text: str = _PlayersTab.TEXTS["controls"]["move_top"]["title"]
         widget = self._move_top
         widget.configure(text=text)
         widget.grid(row=0, column=0, sticky="nsew")
 
     def _build_move_up(self):
-        text: str = PlayersTab.TEXTS["controls"]["move_up"]["title"]
+        text: str = _PlayersTab.TEXTS["controls"]["move_up"]["title"]
         widget = self._move_up
         widget.configure(text=text)
         widget.grid(row=0, column=1, sticky="nsew")
 
     def _build_move_down(self):
-        text: str = PlayersTab.TEXTS["controls"]["move_down"]["title"]
+        text: str = _PlayersTab.TEXTS["controls"]["move_down"]["title"]
         widget = self._move_down
         widget.configure(text=text)
         widget.grid(row=0, column=2, sticky="nsew")
 
     def _build_move_bottom(self):
-        text: str = PlayersTab.TEXTS["controls"]["move_bottom"]["title"]
+        text: str = _PlayersTab.TEXTS["controls"]["move_bottom"]["title"]
         widget = self._move_bottom
         widget.configure(text=text)
         widget.grid(row=0, column=3, sticky="nsew")
 
     def _build_remove(self):
-        text: str = PlayersTab.TEXTS["controls"]["remove"]["title"]
+        text: str = _PlayersTab.TEXTS["controls"]["remove"]["title"]
         widget = self._remove
         widget.configure(text=text)
         widget.grid(row=0, column=4, sticky="nsew")
@@ -259,7 +285,7 @@ class PlayersTab(tkh.BaseTab):
         self._bind_remove()
 
     def _bind_players_var(self):
-        self.data.players_var.trace_add("write", self._handle_players_write)
+        _Vars.players.trace_add("write", self._handle_players_write)
 
     def _bind_entry(self):
         self._entry.configure(textvariable=self._player_to_add)
@@ -305,9 +331,9 @@ class PlayersTab(tkh.BaseTab):
             # [TODO] notify user somehow
             return None
 
-        players = self.data.players_var.get()
+        players = _Vars.players.get()
         players.append(player_name)
-        self.data.players_var.set(players)
+        _Vars.players.set(players)
         return None
 
     def _handle_move_top(self, event: tk.Event = None):
@@ -365,9 +391,9 @@ class PlayersTab(tkh.BaseTab):
             return None
 
         index = self.view.index(self.view.selection()[0])
-        players = self.data.players_var.get()
+        players = _Vars.players.get()
         players.pop(index)
-        self.data.players_var.set(players)
+        _Vars.players.set(players)
 
         if not self.view.get_children():
             self._entry.focus_set()
@@ -385,18 +411,18 @@ class PlayersTab(tkh.BaseTab):
         if not player_name:
             return False
 
-        players = self.data.players_var.get()
+        players = _Vars.players.get()
         if player_name in players:
             return False
 
-        if len(players) == self.data.player_limit:
+        if len(players) == _Vars.player_limit.get():
             return False
         return True
 
     def _move_player(self, current_index: int, new_index: int):
-        players = self.data.players_var.get()
+        players = _Vars.players.get()
         players.insert(new_index, players.pop(current_index))
-        self.data.players_var.set(players)
+        _Vars.players.set(players)
         self.view.selection_set(self.view.get_children()[new_index])
 
     def _toggle_controls(self):
@@ -407,7 +433,7 @@ class PlayersTab(tkh.BaseTab):
                 and control.master is self._controls
         ]
 
-        if len(self.data.players_var.get()) == 0:
+        if len(_Vars.players.get()) == 0:
             for control in controls:
                 control.state(["disabled"])
         else:
@@ -417,17 +443,13 @@ class PlayersTab(tkh.BaseTab):
     def _update_view(self):
         for item in self.view.get_children():
             self.view.delete(item)
-        for position, player in enumerate(self.data.players_var.get(), start=1):
+        for position, player in enumerate(_Vars.players.get(), start=1):
             self.view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
 
 
-class OverviewTab(tkh.BaseTab):
-    """
-    tbc
-    """
-
+class _OverviewTab():
     # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {
         "title": "Start",
@@ -445,19 +467,27 @@ class OverviewTab(tkh.BaseTab):
         }
     }
 
-    def __init__(self, data: Data, parent: ttk.Notebook):
-        super().__init__(parent)
+    def __init__(self, parent: ttk.Notebook):
+        self._parent = parent
+        self._root = ttk.Frame(master=self._parent)
 
-        self.data = data
-        self._mode = ttk.Labelframe(master=self.root)
+        self._mode = ttk.Labelframe(master=self._root)
         self._mode_name_label = ttk.Label(master=self._mode)
         self._mode_separator = ttk.Separator(master=self._mode)
         self._mode_description_label = ttk.Label(master=self._mode)
 
-        self._players = ttk.Labelframe(master=self.root)
+        self._players = ttk.Labelframe(master=self._root)
         self._players_view = ttk.Treeview(master=self._players)
 
-        self._start = ttk.Button(master=self.root)
+        self._start = ttk.Button(master=self._root)
+
+    @property
+    def parent(self) -> ttk.Notebook:
+        return self._parent
+
+    @property
+    def root(self) -> ttk.Frame:
+        return self._root
 
     def build(self):
         self._build_root()
@@ -470,16 +500,16 @@ class OverviewTab(tkh.BaseTab):
         self._build_start()
 
     def _build_root(self):
-        text: str = OverviewTab.TEXTS["title"]
-        widget = self.root
+        text: str = _OverviewTab.TEXTS["title"]
+        widget = self._root
         widget.configure(padding=5, takefocus=0)
-        self.parent.add(child=widget, text=text)
+        self._parent.add(child=widget, text=text)
         widget.rowconfigure(index=0, weight=1)
         widget.rowconfigure(index=1, weight=3)
         widget.columnconfigure(index=0, weight=1)
 
     def _build_mode(self):
-        text: str = OverviewTab.TEXTS["mode"]["title"]
+        text: str = _OverviewTab.TEXTS["mode"]["title"]
         widget = self._mode
         widget.configure(padding=5, text=text, takefocus=0)
         widget.grid(row=0, column=0, sticky="nsew", pady=10)
@@ -508,7 +538,7 @@ class OverviewTab(tkh.BaseTab):
         widget.grid(row=2, column=0, sticky="nsew")
 
     def _build_players(self):
-        text: str = OverviewTab.TEXTS["players"]["title"]
+        text: str = _OverviewTab.TEXTS["players"]["title"]
         widget = self._players
         widget.configure(padding=5, text=text, takefocus=0)
         widget.grid(row=1, column=0, sticky="nsew", pady=10)
@@ -516,7 +546,7 @@ class OverviewTab(tkh.BaseTab):
         widget.columnconfigure(index=0, weight=1)
 
     def _build_players_view(self):
-        texts: dict[str, str] = PlayersTab.TEXTS["view"]["columns"]
+        texts: dict[str, str] = _PlayersTab.TEXTS["view"]["columns"]
         widget = self._players_view
 
         widget.configure(
@@ -530,7 +560,7 @@ class OverviewTab(tkh.BaseTab):
             widget.heading(column=key, text=value)
 
     def _build_start(self):
-        text: str = OverviewTab.TEXTS["start"]["title"]
+        text: str = _OverviewTab.TEXTS["start"]["title"]
         widget = self._start
         widget.configure(padding=5, text=text)
         widget.grid(row=2, column=0, sticky="nsew")
@@ -539,12 +569,12 @@ class OverviewTab(tkh.BaseTab):
         self._bind_mode_id_var()
         self._bind_players_var()
         self._bind_start()
-    
+
     def _bind_mode_id_var(self):
-        self.data.mode_id_var.trace_add("write", self._handle_mode_id_write)
+        _Vars.mode_id.trace_add("write", self._handle_mode_id_write)
         
     def _bind_players_var(self):
-        self.data.players_var.trace_add("write", self._handle_players_write)
+        _Vars.players.trace_add("write", self._handle_players_write)
         
     def _bind_start(self):
         self._start.configure(command=self._handle_start)
@@ -555,12 +585,13 @@ class OverviewTab(tkh.BaseTab):
         ...
     
     def _handle_start(self, event: tk.Event = None):
-        self.parent.event_generate(
-            sequence=tkh.CustomEvent.OVERVIEW_TAB_FINISHED.value
+        self._parent.update()
+        self._parent.event_generate(
+            sequence=CustomEvent.OVERVIEW_TAB_FINISHED.value
         )
 
     def _handle_mode_id_write(self, *args):
-        mode = metadata.Modes.get_mode(self.data.mode_id_var.get())
+        mode = metadata.Modes.get_mode(_Vars.mode_id.get())
         self._mode_name_label.configure(text=mode.name)
         self._mode_description_label.configure(text=mode.description)
 
@@ -570,187 +601,238 @@ class OverviewTab(tkh.BaseTab):
     def _update_players_view(self):
         for item in self._players_view.get_children():
             self._players_view.delete(item)
-        for position, player in enumerate(self.data.players_var.get(), start=1):
+        for position, player in enumerate(_Vars.players.get(), start=1):
             self._players_view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
 
     def _toggle_start(self):
-        if not self.data.mode_id_var.get() or not self.data.players_var.get():
+        if not _Vars.mode_id.get() or not _Vars.players.get():
             self._start.state(["disabled"])
         else:
             self._start.state(["!disabled"])
 
 
-class PregameWindow(tkh.BaseWidget):
-    """
-    tbc
-    """
+class _Notebook():
+    def __init__(self, parent: ttk.Frame):       
+        self._parent = parent
+        self._root = ttk.Notebook()
+        self._modes_tab = _ModesTab(self._root)
+        self._players_tab = _PlayersTab(self._root)
+        self._overview_tab = _OverviewTab(self._root)
 
+    @property
+    def parent(self) -> ttk.Frame:
+        return self._parent
+    
+    @property
+    def root(self) -> ttk.Notebook:
+        return self._root
+
+    def build(self):
+        self._build_root()
+        self._modes_tab.build()
+        self._players_tab.build()
+        self._overview_tab.build()
+
+    def _build_root(self):
+        widget = self._root
+        widget.configure(takefocus=0)
+        widget.grid(row=0, column=0, sticky="nsew")
+        widget.rowconfigure(index=0, weight=1)
+        widget.columnconfigure(index=0, weight=1)
+
+    def bind(self):
+        self._bind_root()
+        self._modes_tab.bind()
+        self._players_tab.bind()
+        self._overview_tab.bind()
+
+    def _bind_root(self):
+        widget = self._root
+        widget.bind("<<NotebookTabChanged>>", self._handle_tab_changed)
+        widget.bind_all(
+            "<<ChangeToPreviousTabRequested>>",
+            self._handle_change_to_previous_tab_requested
+        )
+        widget.bind_all(
+            "<<ChangeToNextTabRequested>>",
+            self._handle_change_to_next_tab_requested
+        )
+
+    def _handle_change_to_previous_tab_requested(self, event: tk.Event = None) -> None:
+        index: int = self._root.index("current")
+        if index == 0 or self._root.index("end") == 1:
+            return None
+        self._change_to_tab(index-1)
+
+    def _handle_change_to_next_tab_requested(self, event: tk.Event = None):
+        index: int = self._root.index("current")
+        last_index: int = self._root.index("end")-1
+        if index == last_index or last_index == 0:
+            return None
+        self._change_to_tab(index+1)
+
+    def _handle_tab_changed(self, event: tk.Event = None):
+        index = self._root.index("current")
+
+        if index == 0:
+            _Vars.is_first_tab.set(True)
+        else:
+            _Vars.is_first_tab.set(False)
+
+        if index == self._root.index("end")-1:
+            _Vars.is_last_tab.set(True)
+        else:
+            _Vars.is_last_tab.set(False)
+        
+        tabs = [self._players_tab, self._overview_tab]
+        for tab in tabs:
+            if index == self._root.index(tab.root):
+                tab.handle_change_to_self()
+                break
+
+    def _change_to_tab(self, index: int):
+        self._root.select(index)
+
+class _BottomBar():
     # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {
-        "go_to_previous_tab": {
+        "go_back": {
             "title": "< Back"
         },
-        "go_to_next_tab": {
+        "go_next": {
             "title": "Next >"
         }
     }
 
-    def __init__(self, parent: ttk.Frame):
-        super().__init__(parent)
-        self.data = Data(tk.StringVar(), 8, tkh.ListVar())
-
-        self._notebook = ttk.Notebook(master=self.root)
-        self._modes_tab = ModesTab(self.data, self._notebook)
-        self._players_tab = PlayersTab(self.data, self._notebook)
-        self._overview_tab = OverviewTab(self.data, self._notebook)
-
-        self._bottom_bar = ttk.Frame(master=self.root)
-        self._go_to_previous_tab = ttk.Button(master=self._bottom_bar)
-        self._go_to_next_tab = ttk.Button(master=self._bottom_bar)
-
-        self._players = []
-        self._mode_id = ""
+    def __init__(self, parent: ttk.Frame):     
+        self._parent = parent
+        self._root = ttk.Frame()
+        self._go_back = ttk.Button(master=self._root)
+        self._go_next = ttk.Button(master=self._root)
 
     @property
     def parent(self) -> ttk.Frame:
-        return super().parent
-
-    @property
-    def players(self) -> list[str]:
-        return self._players
+        return self._parent
     
     @property
-    def mode_id(self) -> str:
-        return self._mode_id
+    def root(self) -> ttk.Frame:
+        return self._root
 
     def build(self):
         self._build_root()
-        self._build_notebook()
-        self._modes_tab.build()
-        self._players_tab.build()
-        self._overview_tab.build()
-        self._build_bottom_bar()
-        self._build_go_to_previous_tab()
-        self._build_go_to_next_tab()
-
-    def _build_root(self):
-        widget = self.root
-        widget.configure(takefocus=0)
-        widget.grid(row=0, column=0, sticky="nsew")
-        widget.rowconfigure(index=0, weight=1)
-        widget.columnconfigure(index=0, weight=1)
-
-    def _build_notebook(self):
-        widget = self._notebook
-        widget.configure(takefocus=0)
-        widget.grid(row=0, column=0, sticky="nsew")
-        widget.rowconfigure(index=0, weight=1)
-        widget.columnconfigure(index=0, weight=1)
+        self._build_go_back()
+        self._build_go_next()
     
-    def _build_bottom_bar(self):
-        widget = self._bottom_bar
+    def _build_root(self):
+        widget = self._root
         widget.configure(padding=5, takefocus=0)
         widget.grid(row=1, column=0, sticky="nsew")
         widget.rowconfigure(index=0, weight=1)
         widget.columnconfigure(index=0, weight=1)
         widget.columnconfigure(index=1, weight=1)
 
-    def _build_go_to_previous_tab(self):
-        text: str = PregameWindow.TEXTS["go_to_previous_tab"]["title"]
-        widget = self._go_to_previous_tab
+    def _build_go_back(self):
+        text: str = _BottomBar.TEXTS["go_back"]["title"]
+        widget = self._go_back
         widget.configure(text=text)
         widget.grid(row=0, column=0, sticky="nsw")
 
-    def _build_go_to_next_tab(self):
-        text: str = PregameWindow.TEXTS["go_to_next_tab"]["title"]
-        widget = self._go_to_next_tab
+    def _build_go_next(self):
+        text: str = _BottomBar.TEXTS["go_next"]["title"]
+        widget = self._go_next
         widget.configure(text=text)
         widget.grid(row=0, column=1, sticky="nse")
 
     def bind(self):
+        self._bind_go_back()
+        self._bind_go_next()
+
+    def _bind_is_first_tab_write(self):
+        var = _Vars.is_first_tab
+        var.trace_add("write", self._handle_is_first_tab_write)
+
+    def _bind_is_last_tab_write(self):
+        var = _Vars.is_last_tab
+        var.trace_add("write", self._handle_is_last_tab_write)
+
+    def _bind_go_back(self):
+        widget = self._go_back
+        widget.configure(command=self._handle_go_back)
+
+    def _bind_go_next(self):
+        widget = self._go_next
+        widget.configure(command=self._handle_go_next)
+
+    def _handle_is_first_tab_write(self, event: tk.Event = None):
+        if _Vars.is_first_tab.get():
+            state = ["disabled"]
+        else:
+            state = ["!disabled"]
+        self._go_back.state(state)
+
+    def _handle_is_last_tab_write(self, event: tk.Event = None):
+        if _Vars.is_last_tab.get():
+            state = ["disabled"]
+        else:
+            state = ["!disabled"]
+        self._go_next.state(state)
+
+    def _handle_go_back(self, event: tk.Event = None):
+        self._go_back.event_generate("<<ChangeToPreviousTabRequested>>")
+
+    def _handle_go_next(self, event: tk.Event = None):
+        self._go_next.event_generate("<<ChangeToNextTabRequested>>")
+
+
+class PregameWindow():
+    """
+    tbc
+    """
+
+    def __init__(self, parent: ttk.Frame):
+        _Vars.init()
+        _Vars.player_limit.set(8)
+
+        self._parent = parent
+        self._root = ttk.Frame(master=self._parent)
+        self._notebook = _Notebook(self._root)
+        self._bottom_bar = _BottomBar(self._root)
+
+    @property
+    def parent(self) -> ttk.Frame:
+        return self._parent
+
+    @property
+    def root(self) -> ttk.Frame:
+        return self._root 
+
+    def build(self):
+        self._build_root()
+        self._notebook.build()
+        self._bottom_bar.build()
+
+    def _build_root(self):
+        widget = self._root
+        widget.configure(takefocus=0)
+        widget.grid(row=0, column=0, sticky="nsew")
+        widget.rowconfigure(index=0, weight=1)
+        widget.columnconfigure(index=0, weight=1)
+
+    def bind(self):
         self._bind_root()
-        self._bind_notebook()
-        self._modes_tab.bind()
-        self._players_tab.bind()
-        self._overview_tab.bind()
-        self._bind_go_to_previous_tab()
-        self._bind_go_to_next_tab()
+        self._notebook.bind()
+        self._bottom_bar.bind()
 
     def _bind_root(self):
-        self._root.bind(
-            tkh.CustomEvent.OVERVIEW_TAB_FINISHED.value,
+        self._root.bind_all(
+            CustomEvent.OVERVIEW_TAB_FINISHED.value,
             self._handle_overview_tab_finished
         )
 
-    def _bind_notebook(self):
-        self._notebook.bind(
-            "<<NotebookTabChanged>>",
-            self._handle_tab_changed
+    def _handle_overview_tab_finished(self, event: tk.Event = None):
+        print(1)
+        self._root.event_generate(
+            sequence=CustomEvent.PREGAME_WINDOW_FINISHED.value
         )
-
-    def _bind_go_to_previous_tab(self):
-        widget = self._go_to_previous_tab
-        widget.configure(command=self._handle_go_to_previous_tab)
-
-    def _bind_go_to_next_tab(self):
-        widget = self._go_to_next_tab
-        widget.configure(command=self._handle_go_to_next_tab)
-
-    def _handle_tab_changed(self, event: tk.Event = None):
-        self._toggle_controls()
-        for tab in self._get_tabs():
-            if tab.is_active():
-                tab.handle_change_to_self()
-                break
-
-    def _handle_go_to_previous_tab(self, event: tk.Event = None):
-        self._change_to_previous_tab()
-
-    def _handle_go_to_next_tab(self, event: tk.Event = None):
-        self._change_to_next_tab()
-
-    def _handle_overview_tab_finished(self):
-        self._players = self.data.players_var.get()
-        self._mode_id = self.data.mode_id_var.get()
-        self.root.event_generate(
-            sequence=tkh.CustomEvent.PREGAME_WINDOW_FINISHED.value
-        )
-        print("pgw._handle_overview_tab_finished")
-
-    def _change_to_previous_tab(self) -> None:
-        current_index = self._notebook.index("current")
-        if current_index == 0 or len(self._notebook.tabs()) == 1:
-            return None
-        self._change_to_tab(current_index-1)
-
-    def _change_to_next_tab(self) -> None:
-        current_index = self._notebook.index("current")
-        last_index = len(self._notebook.tabs())-1
-        if current_index == last_index or last_index == 0:
-            return None
-        self._change_to_tab(current_index+1)
-
-    def _change_to_tab(self, tab_id):
-        self._notebook.select(tab_id)
-
-    def _toggle_controls(self):
-        index = self._notebook.index("current")
-
-        if index == 0:
-            self._go_to_previous_tab.state(["disabled"])
-        else:
-            self._go_to_previous_tab.state(["!disabled"])
-
-        if index == len(self._notebook.winfo_children())-1:
-            self._go_to_next_tab.state(["disabled"])
-        else:
-            self._go_to_next_tab.state(["!disabled"])
-
-    def _get_tabs(self) -> list[tkh.BaseTab]:
-        return [
-            var
-            for var in vars(self).values()
-            if isinstance(var, tkh.BaseTab)
-        ]

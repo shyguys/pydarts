@@ -58,8 +58,8 @@ class AppWindow():
         self._pregame_window.bind()
 
     def _bind_root(self):
-        self._root.bind(
-            pregamewindow.CustomEvent.PREGAME_WINDOW_FINISHED.value,
+        self._root.bind_all(
+            pregamewindow.Event.PREGAME_WINDOW_FINISHED.value,
             self._handle_pregame_window_finished
         )
 
@@ -88,6 +88,5 @@ class AppWindow():
             f"  widget: {event.widget!r}"
         )
 
-    def _handle_pregame_window_finished(self):
-        self._pregame_window = None
-        print("apw._handle_pregame_window_finished")
+    def _handle_pregame_window_finished(self, event: tk.Event = None):
+        self._pregame_window.root.destroy()

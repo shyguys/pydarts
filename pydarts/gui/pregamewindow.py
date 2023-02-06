@@ -6,7 +6,9 @@ import pydarts.core.metadata as metadata
 import pydarts.help.tkh as tkh
 
 
-class CustomEvent(Enum):
+class Event(Enum):
+    BOTTOM_BAR_GO_BACK_REQUESTED = "<<BottomBarGoBackRequested>>"
+    BOTTOM_BAR_GO_NEXT_REQUESTED = "<<BottomBarGoNextRequested>>"
     OVERVIEW_TAB_FINISHED = "<<OverviewTabFinished>>"
     PREGAME_WINDOW_FINISHED = "<<PregameWindowFinished>>"
 
@@ -318,7 +320,7 @@ class _PlayersTab():
     def _handle_key_release_return_in_entry(self, event: tk.Event = None):
         self._add.invoke()
 
-    def _handle_players_write(self, *args):
+    def _handle_players_write(self, *args, **kwargs):
         self._update_view()
         self._toggle_controls()
 
@@ -443,8 +445,141 @@ class _PlayersTab():
     def _update_view(self):
         for item in self.view.get_children():
             self.view.delete(item)
+
         for position, player in enumerate(_Vars.players.get(), start=1):
             self.view.insert(
+                parent="", index=tk.END, text=position, values=(player,)
+            )
+
+
+class _ModeOverview():
+    # Temporary, to be defined somewhere/-how else once I know a better way.
+    TEXTS = {
+        "title": "Mode",
+    }
+
+    def __init__(self, parent: ttk.Frame):
+        self._parent = parent
+        self._root = ttk.Labelframe(master=self._parent)
+        self._name = ttk.Label(master=self._root)
+        self._separator = ttk.Separator(master=self._root)
+        self._description = ttk.Label(master=self._root)
+
+    @property
+    def parent(self) -> ttk.Frame:
+        return self._parent
+
+    @property
+    def root(self) -> ttk.Labelframe:
+        return self._root
+
+    def build(self):
+        self._build_root()
+        self._build_name()
+        self._build_separator()
+        self._build_description()
+
+    def _build_root(self):
+        text: str = _ModeOverview.TEXTS["title"]
+        widget = self._root
+        widget.configure(padding=5, text=text, takefocus=0)
+        widget.grid(row=0, column=0, sticky="nsew", pady=10)
+        widget.rowconfigure(index=0, weight=1)
+        widget.rowconfigure(index=1, weight=1)
+        widget.rowconfigure(index=2, weight=8)
+        widget.columnconfigure(index=0, weight=1)
+
+    def _build_name(self):
+        widget = self._name
+        widget.configure(
+            padding=5, anchor="center", justify=tk.CENTER, takefocus=0
+        )
+        widget.grid(row=0, column=0, sticky="nsew")
+
+    def _build_separator(self):
+        widget = self._separator
+        widget.configure(orient=tk.HORIZONTAL, takefocus=0)
+        widget.grid(row=1, column=0, sticky="nsew")
+
+    def _build_description(self):
+        widget = self._description
+        widget.configure(
+            padding=5, anchor="center", justify=tk.CENTER, takefocus=0
+        )
+        widget.grid(row=2, column=0, sticky="nsew")
+
+    def bind(self):
+        self._bind_mode_id_var()
+
+    def _bind_mode_id_var(self):
+        _Vars.mode_id.trace_add("write", self._handle_mode_id_write)
+    
+    def _handle_mode_id_write(self, *args, **kwargs):
+        mode = metadata.Modes.get_mode(_Vars.mode_id.get())
+        self._name.configure(text=mode.name)
+        self._description.configure(text=mode.description)
+
+
+class _PlayersOverview():
+    # Temporary, to be defined somewhere/-how else once I know a better way.
+    TEXTS = {
+        "title": "Players"
+    }
+
+    def __init__(self, parent: ttk.Frame):
+        self._parent = parent
+        self._root = ttk.Labelframe(master=self._parent)
+        self._view = ttk.Treeview(master=self._root)
+
+    @property
+    def parent(self) -> ttk.Frame:
+        return self._parent
+
+    @property
+    def root(self) -> ttk.Labelframe:
+        return self._root
+
+    def build(self):
+        self._build_root()
+        self._build_view()
+
+    def _build_root(self):
+        text: str = _PlayersOverview.TEXTS["title"]
+        widget = self._root
+        widget.configure(padding=5, text=text, takefocus=0)
+        widget.grid(row=1, column=0, sticky="nsew", pady=10)
+        widget.rowconfigure(index=0, weight=1)
+        widget.columnconfigure(index=0, weight=1)
+
+    def _build_view(self):
+        texts: dict[str, str] = _PlayersTab.TEXTS["view"]["columns"]
+        widget = self._view
+
+        widget.configure(
+            columns=list(texts)[1:], selectmode="none", takefocus=0
+        )
+        widget.grid(row=0, column=0, sticky="nsew")
+        widget.column(column="#0", stretch=tk.NO)
+        widget.column(column="player", anchor="w")
+
+        for key, value in texts.items():
+            widget.heading(column=key, text=value)
+
+    def bind(self):
+        self._bind_players_var()
+        
+    def _bind_players_var(self):
+        _Vars.players.trace_add("write", self._handle_players_write)
+
+    def _handle_players_write(self, *args, **kwargs):
+        self._update_players_view()
+
+    def _update_players_view(self):
+        for item in self._view.get_children():
+            self._view.delete(item)
+
+        for position, player in enumerate(_Vars.players.get(), start=1):
+            self._view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
 
@@ -453,15 +588,6 @@ class _OverviewTab():
     # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {
         "title": "Start",
-        "mode": {
-            "title": "Mode",
-        },
-        "players": {
-            "title": "Players",
-            "edit": {
-                "title": "Edit"
-            }
-        },
         "start": {
             "title": "Start!"
         }
@@ -470,15 +596,8 @@ class _OverviewTab():
     def __init__(self, parent: ttk.Notebook):
         self._parent = parent
         self._root = ttk.Frame(master=self._parent)
-
-        self._mode = ttk.Labelframe(master=self._root)
-        self._mode_name_label = ttk.Label(master=self._mode)
-        self._mode_separator = ttk.Separator(master=self._mode)
-        self._mode_description_label = ttk.Label(master=self._mode)
-
-        self._players = ttk.Labelframe(master=self._root)
-        self._players_view = ttk.Treeview(master=self._players)
-
+        self._mode = _ModeOverview(parent=self._root)
+        self._players = _PlayersOverview(parent=self._root)
         self._start = ttk.Button(master=self._root)
 
     @property
@@ -491,12 +610,8 @@ class _OverviewTab():
 
     def build(self):
         self._build_root()
-        self._build_mode()
-        self._build_mode_name_label()
-        self._build_mode_separator()
-        self._build_mode_description_label()
-        self._build_players()
-        self._build_players_view()
+        self._mode.build()
+        self._players.build()
         self._build_start()
 
     def _build_root(self):
@@ -508,57 +623,6 @@ class _OverviewTab():
         widget.rowconfigure(index=1, weight=3)
         widget.columnconfigure(index=0, weight=1)
 
-    def _build_mode(self):
-        text: str = _OverviewTab.TEXTS["mode"]["title"]
-        widget = self._mode
-        widget.configure(padding=5, text=text, takefocus=0)
-        widget.grid(row=0, column=0, sticky="nsew", pady=10)
-        widget.rowconfigure(index=0, weight=1)
-        widget.rowconfigure(index=1, weight=1)
-        widget.rowconfigure(index=2, weight=8)
-        widget.columnconfigure(index=0, weight=1)
-
-    def _build_mode_name_label(self):
-        widget = self._mode_name_label
-        widget.configure(
-            padding=5, anchor="center", justify=tk.CENTER, takefocus=0
-        )
-        widget.grid(row=0, column=0, sticky="nsew")
-
-    def _build_mode_separator(self):
-        widget = self._mode_separator
-        widget.configure(orient=tk.HORIZONTAL, takefocus=0)
-        widget.grid(row=1, column=0, sticky="nsew")
-
-    def _build_mode_description_label(self):
-        widget = self._mode_description_label
-        widget.configure(
-            padding=5, anchor="center", justify=tk.CENTER, takefocus=0
-        )
-        widget.grid(row=2, column=0, sticky="nsew")
-
-    def _build_players(self):
-        text: str = _OverviewTab.TEXTS["players"]["title"]
-        widget = self._players
-        widget.configure(padding=5, text=text, takefocus=0)
-        widget.grid(row=1, column=0, sticky="nsew", pady=10)
-        widget.rowconfigure(index=0, weight=1)
-        widget.columnconfigure(index=0, weight=1)
-
-    def _build_players_view(self):
-        texts: dict[str, str] = _PlayersTab.TEXTS["view"]["columns"]
-        widget = self._players_view
-
-        widget.configure(
-            columns=list(texts)[1:], selectmode="none", takefocus=0
-        )
-        widget.grid(row=0, column=0, sticky="nsew")
-        widget.column(column="#0", stretch=tk.NO)
-        widget.column(column="player", anchor="w")
-
-        for key, value in texts.items():
-            widget.heading(column=key, text=value)
-
     def _build_start(self):
         text: str = _OverviewTab.TEXTS["start"]["title"]
         widget = self._start
@@ -566,6 +630,8 @@ class _OverviewTab():
         widget.grid(row=2, column=0, sticky="nsew")
 
     def bind(self):
+        self._mode.bind()
+        self._players.bind()
         self._bind_mode_id_var()
         self._bind_players_var()
         self._bind_start()
@@ -587,24 +653,14 @@ class _OverviewTab():
     def _handle_start(self, event: tk.Event = None):
         self._parent.update()
         self._parent.event_generate(
-            sequence=CustomEvent.OVERVIEW_TAB_FINISHED.value
+            sequence=Event.OVERVIEW_TAB_FINISHED.value
         )
 
-    def _handle_mode_id_write(self, *args):
-        mode = metadata.Modes.get_mode(_Vars.mode_id.get())
-        self._mode_name_label.configure(text=mode.name)
-        self._mode_description_label.configure(text=mode.description)
+    def _handle_mode_id_write(self, *args, **kwargs):
+        self._toggle_start()
 
-    def _handle_players_write(self, *args):
-        self._update_players_view()
-
-    def _update_players_view(self):
-        for item in self._players_view.get_children():
-            self._players_view.delete(item)
-        for position, player in enumerate(_Vars.players.get(), start=1):
-            self._players_view.insert(
-                parent="", index=tk.END, text=position, values=(player,)
-            )
+    def _handle_players_write(self, *args, **kwargs):
+        self._toggle_start()
 
     def _toggle_start(self):
         if not _Vars.mode_id.get() or not _Vars.players.get():
@@ -616,7 +672,7 @@ class _OverviewTab():
 class _Notebook():
     def __init__(self, parent: ttk.Frame):       
         self._parent = parent
-        self._root = ttk.Notebook()
+        self._root = ttk.Notebook(master=self._parent)
         self._modes_tab = _ModesTab(self._root)
         self._players_tab = _PlayersTab(self._root)
         self._overview_tab = _OverviewTab(self._root)
@@ -652,11 +708,11 @@ class _Notebook():
         widget = self._root
         widget.bind("<<NotebookTabChanged>>", self._handle_tab_changed)
         widget.bind_all(
-            "<<ChangeToPreviousTabRequested>>",
+            Event.BOTTOM_BAR_GO_BACK_REQUESTED.value,
             self._handle_change_to_previous_tab_requested
         )
         widget.bind_all(
-            "<<ChangeToNextTabRequested>>",
+            Event.BOTTOM_BAR_GO_NEXT_REQUESTED.value,
             self._handle_change_to_next_tab_requested
         )
 
@@ -708,7 +764,7 @@ class _BottomBar():
 
     def __init__(self, parent: ttk.Frame):     
         self._parent = parent
-        self._root = ttk.Frame()
+        self._root = ttk.Frame(master=self._parent)
         self._go_back = ttk.Button(master=self._root)
         self._go_next = ttk.Button(master=self._root)
 
@@ -780,10 +836,14 @@ class _BottomBar():
         self._go_next.state(state)
 
     def _handle_go_back(self, event: tk.Event = None):
-        self._go_back.event_generate("<<ChangeToPreviousTabRequested>>")
+        self._go_back.event_generate(
+            Event.BOTTOM_BAR_GO_BACK_REQUESTED.value
+        )
 
     def _handle_go_next(self, event: tk.Event = None):
-        self._go_next.event_generate("<<ChangeToNextTabRequested>>")
+        self._go_next.event_generate(
+            Event.BOTTOM_BAR_GO_NEXT_REQUESTED.value
+        )
 
 
 class PregameWindow():
@@ -797,8 +857,8 @@ class PregameWindow():
 
         self._parent = parent
         self._root = ttk.Frame(master=self._parent)
-        self._notebook = _Notebook(self._root)
-        self._bottom_bar = _BottomBar(self._root)
+        self._notebook = _Notebook(parent=self._root)
+        self._bottom_bar = _BottomBar(parent=self._root)
 
     @property
     def parent(self) -> ttk.Frame:
@@ -827,12 +887,11 @@ class PregameWindow():
 
     def _bind_root(self):
         self._root.bind_all(
-            CustomEvent.OVERVIEW_TAB_FINISHED.value,
+            Event.OVERVIEW_TAB_FINISHED.value,
             self._handle_overview_tab_finished
         )
 
     def _handle_overview_tab_finished(self, event: tk.Event = None):
-        print(1)
         self._root.event_generate(
-            sequence=CustomEvent.PREGAME_WINDOW_FINISHED.value
+            sequence=Event.PREGAME_WINDOW_FINISHED.value
         )

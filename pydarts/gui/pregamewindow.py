@@ -7,8 +7,13 @@ import pydarts.help.tkh as tkh
 
 
 class Event(Enum):
-    BOTTOM_BAR_GO_BACK_REQUESTED = "<<BottomBarGoBackRequested>>"
-    BOTTOM_BAR_GO_NEXT_REQUESTED = "<<BottomBarGoNextRequested>>"
+    PLAYER_MOVE_TOP_REQUESTED = "<<PlayerControlsMoveTopRequested>>"
+    PLAYER_MOVE_UP_REQUESTED = "<<PlayerControlsMoveUpRequested>>"
+    PLAYER_MOVE_DOWN_REQUESTED = "<<PlayerControlsMoveDownRequested>>"
+    PLAYER_MOVE_BOTTOM_REQUESTED = "<<PlayerControlsMoveBottomRequested>>"
+    PLAYER_REMOVE_REQUESTED = "<<PlayerControlsRemoveRequested>>"
+    TAB_GO_BACK_REQUESTED = "<<BottomBarGoBackRequested>>"
+    TAB_GO_NEXT_REQUESTED = "<<BottomBarGoNextRequested>>"
     OVERVIEW_TAB_FINISHED = "<<OverviewTabFinished>>"
     PREGAME_WINDOW_FINISHED = "<<PregameWindowFinished>>"
 
@@ -37,6 +42,7 @@ class _Vars():
         cls.is_first_tab_active = tk.BooleanVar()
         cls.is_last_tab_active = tk.BooleanVar()
 
+# ----------------------------- BEGIN ModesTab ------------------------------ #
 
 class _ModesTab():
     # Temporary, to be defined somewhere/-how else once I know a better way.
@@ -74,7 +80,7 @@ class _ModesTab():
         self._parent.add(child=widget, text=text)
         widget.rowconfigure(index=0, weight=1)
         widget.columnconfigure(index=0, weight=1)
-    
+
     # [TODO]: calculate width for '#0' based on longest 'name'?
     def _build_view(self):
         texts: dict[str, str] = _ModesTab.TEXTS["view"]["columns"]
@@ -109,65 +115,33 @@ class _ModesTab():
         _Vars.mode_id.set(mode_id)
 
 
-class _PlayersTab():
+# ------------------------------ END ModesTab ------------------------------- #
+
+# ########################################################################### #
+
+# ---------------------------- BEGIN PlayersTab ----------------------------- #
+
+class _PlayerPrompt():
     # Temporary, to be defined somewhere/-how else once I know a better way.
     TEXTS = {
-        "title": "Add players",
-        "prompt": {
-            "label": {
-                "title": "Provide a name:"
-            },
-            "entry": {},
-            "add": {
-                "title": "Add"
-            }
+        "label": {
+            "title": "Provide a name:"
         },
-        "view": {
-            "columns": {
-                "#0": "Position",
-                "player": "Player"
-            }
-        },
-        "controls": {
-            "move_top": {
-                "title": "⊼"
-            },
-            "move_up": {
-                "title": "∧"
-            },
-            "move_down": {
-                "title": "∨"
-            },
-            "move_bottom": {
-                "title": "⊻"
-            },
-            "remove": {
-                "title": "Remove"
-            }
+        "add": {
+            "title": "Add"
         }
     }
 
-    def __init__(self, parent: ttk.Notebook):
+    def __init__(self, parent: ttk.Frame):
         self._parent = parent
         self._root = ttk.Frame(master=self._parent)
-
-        self._prompt = ttk.Frame(master=self._root)
-        self._label = ttk.Label(master=self._prompt)
-        self._entry = ttk.Entry(master=self._prompt)
-        self._add = ttk.Button(master=self._prompt)
+        self._label = ttk.Label(master=self._root)
+        self._entry = ttk.Entry(master=self._root)
+        self._add = ttk.Button(master=self._root)
         self._player_to_add = tk.StringVar()
 
-        self.view = ttk.Treeview(master=self._root)
-
-        self._controls = ttk.Frame(master=self._root)
-        self._move_top = ttk.Button(master=self._controls)
-        self._move_up = ttk.Button(master=self._controls)
-        self._move_down = ttk.Button(master=self._controls)
-        self._move_bottom = ttk.Button(master=self._controls)
-        self._remove = ttk.Button(master=self._controls)
-
     @property
-    def parent(self) -> ttk.Notebook:
+    def parent(self) -> ttk.Frame:
         return self._parent
 
     @property
@@ -176,28 +150,12 @@ class _PlayersTab():
 
     def build(self):
         self._build_root()
-        self._build_prompt()
         self._build_label()
         self._build_entry()
         self._build_add()
-        self._build_view()
-        self._build_controls()
-        self._build_move_top()
-        self._build_move_up()
-        self._build_move_down()
-        self._build_move_bottom()
-        self._build_remove()
 
     def _build_root(self):
-        text: str = _PlayersTab.TEXTS["title"]
         widget = self._root
-        widget.configure(padding=5, takefocus=0)
-        self._parent.add(child=widget, text=text)
-        widget.rowconfigure(index=1, weight=1)
-        widget.columnconfigure(index=0, weight=1)
-
-    def _build_prompt(self):
-        widget = self._prompt
         widget.configure(padding=5, takefocus=0)
         widget.grid(row=0, column=0, sticky="nsew")
         widget.rowconfigure(index=0, weight=1)
@@ -206,7 +164,7 @@ class _PlayersTab():
         widget.columnconfigure(index=2, weight=1)
 
     def _build_label(self):
-        text: str = _PlayersTab.TEXTS["prompt"]["label"]["title"]
+        text: str = _PlayerPrompt.TEXTS["label"]["title"]
         widget = self._label
         widget.configure(text=text, takefocus=0)
         widget.grid(row=0, column=0, sticky="nse")
@@ -216,75 +174,15 @@ class _PlayersTab():
         widget.grid(row=0, column=1, sticky="nsew", padx=5)
 
     def _build_add(self):
-        text: str = _PlayersTab.TEXTS["prompt"]["add"]["title"]
+        text: str = _PlayerPrompt.TEXTS["add"]["title"]
         widget = self._add
         widget.configure(text=text)
         widget.grid(row=0, column=2, sticky="nsw")
-
-    def _build_view(self):
-        texts: dict[str, str] = _PlayersTab.TEXTS["view"]["columns"]
-        widget = self.view
-
-        widget.configure(
-            columns=list(texts)[1:], selectmode="browse", takefocus=0
-        )
-        widget.grid(row=1, column=0, sticky="nsew")
-        widget.column(column="#0", stretch=tk.NO)
-        widget.column(column="player", anchor="w")
-
-        for key, value in texts.items():
-            widget.heading(column=key, text=value)
-    
-    def _build_controls(self):
-        widget = self._controls
-        widget.configure(takefocus=0)
-        widget.grid(row=2, column=0, sticky="nsew", pady=(5, 0))
-        widget.rowconfigure(index=0, weight=1)
-        widget.columnconfigure(index=0, weight=1)
-        widget.columnconfigure(index=1, weight=1)
-        widget.columnconfigure(index=2, weight=1)
-        widget.columnconfigure(index=3, weight=1)
-        widget.columnconfigure(index=4, weight=1)
-
-    def _build_move_top(self):
-        text: str = _PlayersTab.TEXTS["controls"]["move_top"]["title"]
-        widget = self._move_top
-        widget.configure(text=text)
-        widget.grid(row=0, column=0, sticky="nsew")
-
-    def _build_move_up(self):
-        text: str = _PlayersTab.TEXTS["controls"]["move_up"]["title"]
-        widget = self._move_up
-        widget.configure(text=text)
-        widget.grid(row=0, column=1, sticky="nsew")
-
-    def _build_move_down(self):
-        text: str = _PlayersTab.TEXTS["controls"]["move_down"]["title"]
-        widget = self._move_down
-        widget.configure(text=text)
-        widget.grid(row=0, column=2, sticky="nsew")
-
-    def _build_move_bottom(self):
-        text: str = _PlayersTab.TEXTS["controls"]["move_bottom"]["title"]
-        widget = self._move_bottom
-        widget.configure(text=text)
-        widget.grid(row=0, column=3, sticky="nsew")
-
-    def _build_remove(self):
-        text: str = _PlayersTab.TEXTS["controls"]["remove"]["title"]
-        widget = self._remove
-        widget.configure(text=text)
-        widget.grid(row=0, column=4, sticky="nsew")
 
     def bind(self):
         self._bind_players_var()
         self._bind_entry()
         self._bind_add()
-        self._bind_move_top()
-        self._bind_move_up()
-        self._bind_move_down()
-        self._bind_move_bottom()
-        self._bind_remove()
 
     def _bind_players_var(self):
         _Vars.players.trace_add("write", self._handle_players_write)
@@ -297,32 +195,13 @@ class _PlayersTab():
     
     def _bind_add(self):
         self._add.configure(command=self._handle_add)
-    
-    def _bind_move_top(self):
-        self._move_top.configure(command=self._handle_move_top)
-    
-    def _bind_move_up(self):
-        self._move_up.configure(command=self._handle_move_up)
-    
-    def _bind_move_down(self):
-        self._move_down.configure(command=self._handle_move_down)
-        
-    def _bind_move_bottom(self):
-        self._move_bottom.configure(command=self._handle_move_bottom)
-        
-    def _bind_remove(self):
-        self._remove.configure(command=self._handle_remove)
 
-    def handle_change_to_self(self, event: tk.Event = None):
-        self._toggle_controls()
-        self._entry.focus_set()
+    def _handle_players_write(self, *args, **kwargs):
+        if _Vars.players.get() == 0:
+            self._entry.focus_set()
 
     def _handle_key_release_return_in_entry(self, event: tk.Event = None):
         self._add.invoke()
-
-    def _handle_players_write(self, *args, **kwargs):
-        self._update_view()
-        self._toggle_controls()
 
     def _handle_add(self, event: tk.Event = None) -> None:
         self._entry.focus_set()
@@ -338,75 +217,336 @@ class _PlayersTab():
         _Vars.players.set(players)
         return None
 
+    def _is_valid_player_name(self, player_name: str) -> bool:
+        if not player_name:
+            return False
+
+        players = _Vars.players.get()
+        if player_name in players:
+            return False
+
+        if len(players) == _Vars.player_limit.get():
+            return False
+        return True
+
+
+class _PlayerControls():
+    # Temporary, to be defined somewhere/-how else once I know a better way.
+    TEXTS = {
+        "move_top": {
+            "title": "⊼"
+        },
+        "move_up": {
+            "title": "∧"
+        },
+        "move_down": {
+            "title": "∨"
+        },
+        "move_bottom": {
+            "title": "⊻"
+        },
+        "remove": {
+            "title": "Remove"
+        }
+    }
+
+    def __init__(self, parent: ttk.Frame):
+        self._parent = parent
+        self._root = ttk.Frame(master=self._parent)
+        self._move_top = ttk.Button(master=self._root)
+        self._move_up = ttk.Button(master=self._root)
+        self._move_down = ttk.Button(master=self._root)
+        self._move_bottom = ttk.Button(master=self._root)
+        self._remove = ttk.Button(master=self._root)
+
+    @property
+    def parent(self) -> ttk.Frame:
+        return self._parent
+
+    @property
+    def root(self) -> ttk.Frame:
+        return self._root
+
+    def build(self):
+        self._build_root()
+        self._build_move_top()
+        self._build_move_up()
+        self._build_move_down()
+        self._build_move_bottom()
+        self._build_remove()
+
+    def _build_root(self):
+        widget = self._root
+        widget.configure(takefocus=0)
+        widget.grid(row=2, column=0, sticky="nsew", pady=(5, 0))
+        widget.rowconfigure(index=0, weight=1)
+        widget.columnconfigure(index=0, weight=1)
+        widget.columnconfigure(index=1, weight=1)
+        widget.columnconfigure(index=2, weight=1)
+        widget.columnconfigure(index=3, weight=1)
+        widget.columnconfigure(index=4, weight=1)
+    
+    def _build_move_top(self):
+        text: str = _PlayerControls.TEXTS["move_top"]["title"]
+        widget = self._move_top
+        widget.configure(text=text)
+        widget.grid(row=0, column=0, sticky="nsew")
+
+    def _build_move_up(self):
+        text: str = _PlayerControls.TEXTS["move_up"]["title"]
+        widget = self._move_up
+        widget.configure(text=text)
+        widget.grid(row=0, column=1, sticky="nsew")
+
+    def _build_move_down(self):
+        text: str = _PlayerControls.TEXTS["move_down"]["title"]
+        widget = self._move_down
+        widget.configure(text=text)
+        widget.grid(row=0, column=2, sticky="nsew")
+
+    def _build_move_bottom(self):
+        text: str = _PlayerControls.TEXTS["move_bottom"]["title"]
+        widget = self._move_bottom
+        widget.configure(text=text)
+        widget.grid(row=0, column=3, sticky="nsew")
+
+    def _build_remove(self):
+        text: str = _PlayerControls.TEXTS["remove"]["title"]
+        widget = self._remove
+        widget.configure(text=text)
+        widget.grid(row=0, column=4, sticky="nsew")
+
+    def bind(self):
+        self._bind_players_var()
+        self._bind_move_top()
+        self._bind_move_up()
+        self._bind_move_down()
+        self._bind_move_bottom()
+        self._bind_remove()
+    
+    def _bind_players_var(self):
+        _Vars.players.trace_add("write", self._handle_players_write)
+
+    def _bind_move_top(self):
+        self._move_top.configure(command=self._handle_move_top)
+    
+    def _bind_move_up(self):
+        self._move_up.configure(command=self._handle_move_up)
+    
+    def _bind_move_down(self):
+        self._move_down.configure(command=self._handle_move_down)
+        
+    def _bind_move_bottom(self):
+        self._move_bottom.configure(command=self._handle_move_bottom)
+        
+    def _bind_remove(self):
+        self._remove.configure(command=self._handle_remove)
+
+    def _handle_players_write(self, *args, **kwargs):
+        self._toggle_controls()
+
     def _handle_move_top(self, event: tk.Event = None):
-        selection = self.view.selection()
+        self._root.event_generate(Event.PLAYER_MOVE_TOP_REQUESTED.value)
+
+    def _handle_move_up(self, event: tk.Event = None):
+        self._root.event_generate(Event.PLAYER_MOVE_UP_REQUESTED.value)
+
+    def _handle_move_down(self, event: tk.Event = None):
+        self._root.event_generate(Event.PLAYER_MOVE_DOWN_REQUESTED.value)
+
+    def _handle_move_bottom(self, event: tk.Event = None):
+        self._root.event_generate(Event.PLAYER_MOVE_BOTTOM_REQUESTED.value)
+
+    def _handle_remove(self, event: tk.Event = None):
+        self._root.event_generate(Event.PLAYER_REMOVE_REQUESTED.value)
+
+    def _toggle_controls(self):
+        controls = [
+            self._move_top, self._move_up, self._move_down, self._move_bottom,
+            self._remove
+        ]
+
+        if len(_Vars.players.get()) == 0:
+            state = ["disabled"]
+        else:
+            state = ["!disabled"]
+        
+        for control in controls:
+            control.state(state)
+
+
+class _PlayersTab():
+    # Temporary, to be defined somewhere/-how else once I know a better way.
+    TEXTS = {
+        "title": "Add players",
+        "view": {
+            "columns": {
+                "#0": "Position",
+                "player": "Player"
+            }
+        }
+    }
+
+    def __init__(self, parent: ttk.Notebook):
+        self._parent = parent
+        self._root = ttk.Frame(master=self._parent)
+        self._prompt = _PlayerPrompt(parent=self.root)
+        self._view = ttk.Treeview(master=self._root)
+        self._controls = _PlayerControls(parent=self._root)
+
+    @property
+    def parent(self) -> ttk.Notebook:
+        return self._parent
+
+    @property
+    def root(self) -> ttk.Frame:
+        return self._root
+
+    def build(self):
+        self._build_root()
+        self._prompt.build()
+        self._build_view()
+        self._controls.build()
+
+    def _build_root(self):
+        text: str = _PlayersTab.TEXTS["title"]
+        widget = self._root
+        widget.configure(padding=5, takefocus=0)
+        self._parent.add(child=widget, text=text)
+        widget.rowconfigure(index=1, weight=1)
+        widget.columnconfigure(index=0, weight=1)
+
+    def _build_view(self):
+        texts: dict[str, str] = _PlayersTab.TEXTS["view"]["columns"]
+        widget = self._view
+
+        widget.configure(
+            columns=list(texts)[1:], selectmode="browse", takefocus=0
+        )
+        widget.grid(row=1, column=0, sticky="nsew")
+        widget.column(column="#0", stretch=tk.NO)
+        widget.column(column="player", anchor="w")
+
+        for key, value in texts.items():
+            widget.heading(column=key, text=value)
+
+    def bind(self):
+        self._bind_players_var()
+        self._prompt.bind()
+        self._controls.bind()
+        self._bind_move_top_request()
+        self._bind_move_up_request()
+        self._bind_move_down_request()
+        self._bind_move_bottom_request()
+        self._bind_remove_requested()
+
+    def _bind_players_var(self):
+        _Vars.players.trace_add("write", self._handle_players_write)
+    
+    def _bind_move_top_request(self):
+        self._root.bind_all(
+            Event.PLAYER_MOVE_TOP_REQUESTED.value,
+            self._handle_move_top_request
+        )
+    
+    def _bind_move_up_request(self):
+        self._root.bind_all(
+            Event.PLAYER_MOVE_UP_REQUESTED.value,
+            self._handle_move_up_request
+        )
+    
+    def _bind_move_down_request(self):
+        self._root.bind_all(
+            Event.PLAYER_MOVE_DOWN_REQUESTED.value,
+            self._handle_move_down_request
+        )
+        
+    def _bind_move_bottom_request(self):
+        self._root.bind_all(
+            Event.PLAYER_MOVE_BOTTOM_REQUESTED.value,
+            self._handle_move_bottom_request
+        )
+        
+    def _bind_remove_requested(self):
+        self._root.bind_all(
+            Event.PLAYER_REMOVE_REQUESTED.value,
+            self._handle_remove_requested
+        )
+
+    def handle_change_to_self(self, event: tk.Event = None):
+        ...
+
+    def _handle_players_write(self, *args, **kwargs):
+        self._update_view()
+
+    def _handle_move_top_request(self, event: tk.Event = None):
+        selection = self._view.selection()
         if not selection:
             return None
 
-        index = self.view.index(self.view.selection()[0])
+        index = self._view.index(self._view.selection()[0])
         if index == 0:
             return None
 
         self._move_player(index, 0)
         return None
 
-    def _handle_move_up(self, event: tk.Event = None):
-        selection = self.view.selection()
+    def _handle_move_up_request(self, event: tk.Event = None):
+        selection = self._view.selection()
         if not selection:
             return None
 
-        index = self.view.index(self.view.selection()[0])
+        index = self._view.index(self._view.selection()[0])
         if index == 0:
             return None
 
         self._move_player(index, index-1)
         return None
 
-    def _handle_move_down(self, event: tk.Event = None):
-        selection = self.view.selection()
+    def _handle_move_down_request(self, event: tk.Event = None):
+        selection = self._view.selection()
         if not selection:
             return None
 
-        index = self.view.index(self.view.selection()[0])
-        if index == len(self.view.get_children())-1:
+        index = self._view.index(self._view.selection()[0])
+        if index == len(self._view.get_children())-1:
             return None
 
         self._move_player(index, index+1)
         return None
 
-    def _handle_move_bottom(self, event: tk.Event = None):
-        selection = self.view.selection()
+    def _handle_move_bottom_request(self, event: tk.Event = None):
+        selection = self._view.selection()
         if not selection:
             return None
 
-        index = self.view.index(self.view.selection()[0])
-        last_index = len(self.view.get_children())-1
+        index = self._view.index(self._view.selection()[0])
+        last_index = len(self._view.get_children())-1
         if index == last_index:
             return None
 
         self._move_player(index, last_index)
         return None
 
-    def _handle_remove(self, event: tk.Event = None) -> None:
-        selection = self.view.selection()
+    def _handle_remove_requested(self, event: tk.Event = None) -> None:
+        selection = self._view.selection()
         if not selection:
             return None
 
-        index = self.view.index(self.view.selection()[0])
+        index = self._view.index(self._view.selection()[0])
         players = _Vars.players.get()
         players.pop(index)
         _Vars.players.set(players)
 
-        if not self.view.get_children():
-            self._entry.focus_set()
+        if not self._view.get_children():
             return None
         
-        if index == len(self.view.get_children()):
+        if index == len(self._view.get_children()):
             new_index = index-1
         else:
             new_index = index
 
-        self.view.selection_set(self.view.get_children()[new_index])
+        self._view.selection_set(self._view.get_children()[new_index])
         return None
 
     def _is_valid_player_name(self, player_name: str) -> bool:
@@ -425,32 +565,22 @@ class _PlayersTab():
         players = _Vars.players.get()
         players.insert(new_index, players.pop(current_index))
         _Vars.players.set(players)
-        self.view.selection_set(self.view.get_children()[new_index])
-
-    def _toggle_controls(self):
-        controls = [
-            control for control in vars(self).values()
-            if
-                isinstance(control, ttk.Button)
-                and control.master is self._controls
-        ]
-
-        if len(_Vars.players.get()) == 0:
-            for control in controls:
-                control.state(["disabled"])
-        else:
-            for control in controls:
-                control.state(["!disabled"])
+        self._view.selection_set(self._view.get_children()[new_index])
 
     def _update_view(self):
-        for item in self.view.get_children():
-            self.view.delete(item)
+        for item in self._view.get_children():
+            self._view.delete(item)
 
         for position, player in enumerate(_Vars.players.get(), start=1):
-            self.view.insert(
+            self._view.insert(
                 parent="", index=tk.END, text=position, values=(player,)
             )
 
+# ----------------------------- END PlayersTab ------------------------------ #
+
+# ########################################################################### #
+
+# ---------------------------- BEGIN OverviewTab ---------------------------- #
 
 class _ModeOverview():
     # Temporary, to be defined somewhere/-how else once I know a better way.
@@ -668,6 +798,11 @@ class _OverviewTab():
         else:
             self._start.state(["!disabled"])
 
+# ----------------------------- END OverviewTab ----------------------------- #
+
+# ########################################################################### #
+
+# --------------------------- BEGIN PregameWindow --------------------------- #
 
 class _Notebook():
     def __init__(self, parent: ttk.Frame):       
@@ -708,11 +843,11 @@ class _Notebook():
         widget = self._root
         widget.bind("<<NotebookTabChanged>>", self._handle_tab_changed)
         widget.bind_all(
-            Event.BOTTOM_BAR_GO_BACK_REQUESTED.value,
+            Event.TAB_GO_BACK_REQUESTED.value,
             self._handle_change_to_previous_tab_requested
         )
         widget.bind_all(
-            Event.BOTTOM_BAR_GO_NEXT_REQUESTED.value,
+            Event.TAB_GO_NEXT_REQUESTED.value,
             self._handle_change_to_next_tab_requested
         )
 
@@ -837,12 +972,12 @@ class _BottomBar():
 
     def _handle_go_back(self, event: tk.Event = None):
         self._go_back.event_generate(
-            Event.BOTTOM_BAR_GO_BACK_REQUESTED.value
+            Event.TAB_GO_BACK_REQUESTED.value
         )
 
     def _handle_go_next(self, event: tk.Event = None):
         self._go_next.event_generate(
-            Event.BOTTOM_BAR_GO_NEXT_REQUESTED.value
+            Event.TAB_GO_NEXT_REQUESTED.value
         )
 
 
@@ -895,3 +1030,5 @@ class PregameWindow():
         self._root.event_generate(
             sequence=Event.PREGAME_WINDOW_FINISHED.value
         )
+
+# ---------------------------- END PregameWindow ---------------------------- #

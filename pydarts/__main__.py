@@ -1,8 +1,10 @@
-from pydarts import app
+import pydarts.app
+
 
 def main():
-    pydarts = app.PyDarts()
-    pydarts.run()
+    app = pydarts.app.PyDarts()
+    app.run()
+
 
 if __name__ == "__main__":
     main()

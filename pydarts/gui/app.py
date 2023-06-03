@@ -2,36 +2,31 @@ import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 
+import pydarts.gui.pregame
 import pydarts.help.tkh as tkh
-from pydarts.gui import pregamewindow
 
 
-class AppWindow():
+class Root():
     def __init__(self, name: str):
         self._name = name
         self._app = tk.Tk()
         self._root = ttk.Frame(master=self._app)
-        self._pregame_window = pregamewindow.PregameWindow(self._root)
-
-    def run(self, debug: bool = False):
+        self._pregame_window = pydarts.gui.pregame.Root(self._root)
         self._build()
         self._bind()
-        self._show()
 
+    def mainloop(self, debug: bool = False):
         if debug:
-            self._configure_debugging()
-
+            self._enable_debugging()
         self._app.mainloop()
 
     def _build(self):
         self._build_app()
         self._build_root()
-        self._pregame_window.build()
 
     def _build_app(self):
         app = self._app
         app.title(self._name)
-
         width = 500
         height = 600
         x = int((app.winfo_screenwidth()/2)-(width/2))
@@ -39,7 +34,6 @@ class AppWindow():
         app.minsize(width=width, height=height)
         app.maxsize(width=width, height=height)
         app.geometry(f"{width}x{height}+{x}+{y}")
-        
         app.rowconfigure(index=0, weight=1)
         app.columnconfigure(index=0, weight=1)
 
@@ -49,22 +43,19 @@ class AppWindow():
         widget.grid(row=0, column=0, sticky="nsew")
         widget.rowconfigure(index=0, weight=1)
         widget.columnconfigure(index=0, weight=1)
-
-    def _show(self):
         self._pregame_window.root.grid(row=0, column=0, sticky="nsew")
 
     def _bind(self):
         self._bind_root()
-        self._pregame_window.bind()
 
     def _bind_root(self):
         self._root.bind_all(
-            pregamewindow.Event.PREGAME_WINDOW_FINISHED.value,
+            pydarts.gui.pregame.Event.PREGAME_WINDOW_FINISHED.value,
             self._handle_pregame_window_finished
         )
 
     # [TODO]: display grid cell borders
-    def _configure_debugging(self):
+    def _enable_debugging(self):
         self._highlight_children()
         sequences = ["<KeyRelease>"]
         for sequence in sequences:

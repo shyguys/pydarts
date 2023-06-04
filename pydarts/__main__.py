@@ -1,8 +1,10 @@
+import sys
+
 import pydarts.app
 
 
 def main():
-    app = pydarts.app.PyDarts()
+    app = pydarts.app.PyDarts(sys.argv[1:])
     app.run()
 
 

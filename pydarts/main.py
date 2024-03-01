@@ -1,43 +1,36 @@
-from typing import Annotated
+import sys
 
-import typer
+from PySide6.QtCore import QCommandLineOption, QCommandLineParser
 
 import pydarts
-
-app = typer.Typer(
-    add_completion=False,
-    context_settings={"terminal_width": 100},
-)
+from pydarts.widgets import Application, MainWindow
 
 
-@app.callback(invoke_without_command=True)
-def callback(
-    debug: Annotated[bool, typer.Option(
-        "--debug",
-        help="Write debug messages to stdout.",
-        show_default=False,
-    )] = False,
-    version: Annotated[bool, typer.Option(
-        "--version",
-        help="Show version and exit.",
-        show_default=False,
-        is_eager=True,
-    )] = False,
-) -> None:
-    """
-    This is a Python app for tracking the score of a Darts game.
-    """
-    pydarts.configure_logging(debug)
-    if version:
-        show_version()
-        raise typer.Exit()
+def parse(app) -> None:
+    parser = QCommandLineParser()
+    parser.addHelpOption()
+    version_option = QCommandLineOption(
+        ["v", "version"],
+        "Show version and exit.",
+    )
+    parser.addOption(version_option)
+    debug_option = QCommandLineOption(
+        ["d", "debug"],
+        "Write debug messages to stdout.",
+    )
+    parser.addOption(debug_option)
+    parser.process(app)
+    pydarts.configure_logging(parser.isSet(debug_option))
+    if parser.isSet(version_option):
+        print(pydarts.__version__)
+        sys.exit()
     return None
 
 
-@app.command("version")
-def show_version() -> None:
-    """
-    Show version and exit.
-    """
-    print(pydarts.__version__)
+def main() -> None:
+    app = Application()
+    parse(app)
+    main_window = MainWindow()
+    main_window.show()
+    app.exec()
     return None

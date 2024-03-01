@@ -1,7 +1,7 @@
 # pydarts
 
-This is a python app for tracking the score of a Darts game.
+This is a Python app for tracking the score of a Darts game.
 
-## Usage
+## tbc
 
-tbc
+Under construction, check back later.

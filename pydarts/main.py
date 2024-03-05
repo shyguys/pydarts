@@ -1,9 +1,10 @@
 import sys
 
 from PySide6.QtCore import QCommandLineOption, QCommandLineParser
+from PySide6.QtWidgets import QApplication
 
 import pydarts
-from pydarts.widgets import Application, MainWindow
+from pydarts.widgets.main_window import MainWindow
 
 
 def parse(app) -> None:
@@ -28,9 +29,12 @@ def parse(app) -> None:
 
 
 def main() -> None:
-    app = Application()
+    app = QApplication(sys.argv)
+    app.setApplicationName("pydarts")
+    app.setApplicationDisplayName("PyDarts")
+    app.setApplicationVersion(pydarts.__version__)
     parse(app)
-    main_window = MainWindow()
-    main_window.show()
+    window = MainWindow()
+    window.show()
     app.exec()
     return None

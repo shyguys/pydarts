@@ -1,6 +1,8 @@
 import logging
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
+package_dir = Path(__file__).parent
 logger = logging.getLogger(__package__)
 try:
     __version__ = version(__package__)

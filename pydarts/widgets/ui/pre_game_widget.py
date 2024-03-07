@@ -86,17 +86,17 @@ class Ui_pre_game_widget(object):
 
         self.verticalLayout.addWidget(self.player_edit_widget)
 
-        self.setup_widget = QWidget(pre_game_widget)
-        self.setup_widget.setObjectName(u"setup_widget")
-        self.horizontalLayout_2 = QHBoxLayout(self.setup_widget)
+        self.start_game_widget = QWidget(pre_game_widget)
+        self.start_game_widget.setObjectName(u"start_game_widget")
+        self.horizontalLayout_2 = QHBoxLayout(self.start_game_widget)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.start_game_push_button = QPushButton(self.setup_widget)
+        self.start_game_push_button = QPushButton(self.start_game_widget)
         self.start_game_push_button.setObjectName(u"start_game_push_button")
 
         self.horizontalLayout_2.addWidget(self.start_game_push_button)
 
 
-        self.verticalLayout.addWidget(self.setup_widget)
+        self.verticalLayout.addWidget(self.start_game_widget)
 
 
         self.retranslateUi(pre_game_widget)

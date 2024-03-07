@@ -92,7 +92,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="setup_widget" native="true">
+    <widget class="QWidget" name="start_game_widget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <widget class="QPushButton" name="start_game_push_button">

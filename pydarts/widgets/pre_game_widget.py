@@ -8,11 +8,19 @@ from pydarts.widgets.ui.pre_game_widget import Ui_pre_game_widget
 class PreGameWidget(QWidget):
     finished = Signal(Game, arguments=["game"])
 
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: QWidget, game: Game | None = None):
         super().__init__(parent=parent)
         self.ui = Ui_pre_game_widget()
         self.ui.setupUi(self)
+        self.load(game)
+
+    def load(self, game: Game | None = None) -> None:
         self.setup_logic()
+        if game is None:
+            return None
+        for player in game.players:
+            self.ui.overview_list_widget.addItem(player.name)
+        return None
 
     def setup_logic(self) -> None:
         self.setup_input_line_edit()
@@ -24,7 +32,7 @@ class PreGameWidget(QWidget):
         return None
 
     def setup_input_line_edit(self) -> None:
-        self.ui.input_line_edit.returnPressed.connect(self.input_line_edit_returnPressed)
+        self.ui.input_line_edit.returnPressed.connect(self.input_line_edit_return_pressed)
         return None
 
     def setup_add_push_button(self) -> None:
@@ -47,7 +55,7 @@ class PreGameWidget(QWidget):
         self.ui.start_game_push_button.released.connect(self.start_game_push_button_released)
         return None
 
-    def input_line_edit_returnPressed(self) -> None:
+    def input_line_edit_return_pressed(self) -> None:
         self.ui.add_push_button.released.emit()
         return None
 

@@ -27,6 +27,7 @@ class Ui_main_window(object):
         self.central_widget.setObjectName(u"central_widget")
         self.verticalLayout = QVBoxLayout(self.central_widget)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.stacked_widget = QStackedWidget(self.central_widget)
         self.stacked_widget.setObjectName(u"stacked_widget")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)

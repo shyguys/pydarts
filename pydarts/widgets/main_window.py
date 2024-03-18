@@ -12,15 +12,14 @@ from pydarts.widgets.ui.main_window import Ui_main_window
 
 class MainWindow(QMainWindow, Ui_main_window):
     finished_exit = Signal()
-    finished_play_again = Signal(models.BaseGame, arguments=["game"])
 
-    def __init__(self, game: Optional[models.BaseGame] = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.setupUi(self)
         self.pre_game_widget: PreGameTabWidget
         self.game_widget: GameWidget
         self.post_game_widget: PostGameWidget
-        self._load_pre_game_widget(game)
+        self._load_pre_game_widget()
         return None
 
     def _load_widget(self, widget: QWidget) -> None:
@@ -59,5 +58,5 @@ class MainWindow(QMainWindow, Ui_main_window):
         self.post_game_widget = PostGameWidget(self, game)
         self._load_widget(self.post_game_widget)
         self.post_game_widget.finished_exit.connect(self.finished_exit.emit)
-        self.post_game_widget.finished_play_again.connect(lambda game: self.finished_play_again.emit(game))
+        self.post_game_widget.finished_play_again.connect(lambda game: self._load_pre_game_widget(game))
         return None

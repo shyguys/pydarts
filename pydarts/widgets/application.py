@@ -1,39 +1,26 @@
+from typing import Optional
+
 from PySide6.QtWidgets import QApplication
 
 import pydarts
-from pydarts.core.models import Game
+from pydarts.core import models
 from pydarts.widgets.main_window import MainWindow
 
 
 class Application(QApplication):
     def __init__(self, args: list[str]) -> None:
         super().__init__(args)
-        self.main_window: MainWindow = None  # type: ignore --> see self.load
         self.setApplicationName("pydarts")
         self.setApplicationDisplayName("PyDarts")
         self.setApplicationVersion(pydarts.__version__)
-        self.load()
+        self.main_window: MainWindow
+        self._load_main_window()
         return None
 
-    def load(self, game: Game | None = None) -> None:
-        self.main_window = MainWindow(game=game)
-        self.main_window.show()
-        self.setup_logic()
-        return None
-
-    def setup_logic(self) -> None:
-        self.setup_main_window()
-        return None
-
-    def setup_main_window(self) -> None:
-        self.main_window.finished_exit.connect(self.main_window_finished_exit)
-        self.main_window.finished_play_again.connect(self.main_window_finished_play_again)
-        return None
-
-    def main_window_finished_exit(self) -> None:
-        self.quit()
-        return None
-
-    def main_window_finished_play_again(self, game: Game) -> None:
-        self.load(game)
+    def _load_main_window(self, game: Optional[models.BaseGame] = None) -> None:
+        if game is not None:
+            self.main_window.destroy()
+        self.main_window = MainWindow(game)
+        self.main_window.finished_exit.connect(self.quit)
+        self.main_window.finished_play_again.connect(lambda game: self._load_main_window(game))
         return None

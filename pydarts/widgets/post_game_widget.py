@@ -1,50 +1,34 @@
+from itertools import groupby
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 
-from pydarts.core.models import Game
+from pydarts.core import models
 from pydarts.widgets.ui.post_game_widget import Ui_post_game_widget
 
 
-class PostGameWidget(QWidget):
-    finished_play_again = Signal(Game, arguments=["game"])
+class PostGameWidget(QWidget, Ui_post_game_widget):
     finished_exit = Signal()
+    finished_play_again = Signal(models.BaseGame, arguments=["game"])
 
-    def __init__(self, parent: QWidget):
-        super().__init__(parent=parent)
-        self.ui = Ui_post_game_widget()
-        self.game: Game = None  # type: ignore --> see self.load
-        self.ui.setupUi(self)
-        self.load()
-
-    def load(self, game: Game | None = None) -> None:
-        self.setup_logic()
-        if game is None:
-            return None
+    def __init__(self, parent: QWidget, game: models.BaseGame) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+        self._load_event_handling()
         self.game = game
-        self.ui.leaderboard_value_label.setText("\n".join(
+        self._draw()
+        return None
+
+    def _load_event_handling(self) -> None:
+        self.exit_game_push_button.released.connect(self.finished_exit.emit)
+        self.play_again_push_button.released.connect(lambda: self.finished_play_again.emit(self.game))
+        return None
+
+    def _draw(self) -> None:
+        leaderboard = groupby(sorted(self.game.players, key=lambda p: p.score), key=lambda p: p.score)
+        self.leaderboard_label.setText("\n".join(
             f"{index+1}. {player.name} ({player.score})"
-            for index, player in
-            enumerate(sorted(self.game.players, key=lambda p: p.score))
+            for index, group in enumerate(leaderboard)
+            for player in group[1]
         ))
-        return None
-
-    def setup_logic(self) -> None:
-        self.setup_exit_game_push_button()
-        self.setup_play_again_push_button()
-        return None
-
-    def setup_exit_game_push_button(self) -> None:
-        self.ui.exit_game_push_button.released.connect(self.exit_game_push_button_released)
-        return None
-
-    def setup_play_again_push_button(self) -> None:
-        self.ui.play_again_push_button.released.connect(self.play_again_push_button_released)
-        return None
-
-    def exit_game_push_button_released(self) -> None:
-        self.finished_exit.emit()
-        return None
-
-    def play_again_push_button_released(self) -> None:
-        self.finished_play_again.emit(self.game)
         return None

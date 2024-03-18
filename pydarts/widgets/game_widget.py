@@ -1,5 +1,5 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QAbstractButton, QPushButton, QWidget
 
 from pydarts.core import models
 from pydarts.widgets.ui.game_widget import Ui_game_widget
@@ -17,12 +17,41 @@ class GameWidget(QWidget, Ui_game_widget):
         return None
 
     def _load_event_handling(self) -> None:
-        self.throw_input_line_edit.returnPressed.connect(self._register_throw)
+        self.input_single_radio_button.released.connect(self._draw_darts_widget)
+        self.input_double_radio_button.released.connect(self._draw_darts_widget)
+        self.input_triple_radio_button.released.connect(self._draw_darts_widget)
+        self.input_miss_push_button.released.connect(lambda: self._register_throw(self.input_miss_push_button))
+        self.input_1_push_button.released.connect(lambda: self._register_throw(self.input_1_push_button))
+        self.input_2_push_button.released.connect(lambda: self._register_throw(self.input_2_push_button))
+        self.input_3_push_button.released.connect(lambda: self._register_throw(self.input_3_push_button))
+        self.input_4_push_button.released.connect(lambda: self._register_throw(self.input_4_push_button))
+        self.input_5_push_button.released.connect(lambda: self._register_throw(self.input_5_push_button))
+        self.input_6_push_button.released.connect(lambda: self._register_throw(self.input_6_push_button))
+        self.input_7_push_button.released.connect(lambda: self._register_throw(self.input_7_push_button))
+        self.input_8_push_button.released.connect(lambda: self._register_throw(self.input_8_push_button))
+        self.input_9_push_button.released.connect(lambda: self._register_throw(self.input_9_push_button))
+        self.input_10_push_button.released.connect(lambda: self._register_throw(self.input_10_push_button))
+        self.input_11_push_button.released.connect(lambda: self._register_throw(self.input_11_push_button))
+        self.input_12_push_button.released.connect(lambda: self._register_throw(self.input_12_push_button))
+        self.input_13_push_button.released.connect(lambda: self._register_throw(self.input_13_push_button))
+        self.input_14_push_button.released.connect(lambda: self._register_throw(self.input_14_push_button))
+        self.input_15_push_button.released.connect(lambda: self._register_throw(self.input_15_push_button))
+        self.input_16_push_button.released.connect(lambda: self._register_throw(self.input_16_push_button))
+        self.input_17_push_button.released.connect(lambda: self._register_throw(self.input_17_push_button))
+        self.input_18_push_button.released.connect(lambda: self._register_throw(self.input_18_push_button))
+        self.input_19_push_button.released.connect(lambda: self._register_throw(self.input_19_push_button))
+        self.input_20_push_button.released.connect(lambda: self._register_throw(self.input_20_push_button))
+        self.input_25_push_button.released.connect(lambda: self._register_throw(self.input_25_push_button))
         self.next_turn_push_button.released.connect(self._continue_to_next_turn)
         self.finish_game_push_button.released.connect(self._end_game)
         return None
 
+    def _draw_darts_widget(self) -> None:
+        self.input_25_push_button.setDisabled(self.input_triple_radio_button.isChecked())
+        return None
+
     def _draw(self) -> None:
+        self._draw_darts_widget()
         current_player = self.game.get_active_player()
         self.turn_order_value_label.setText("\n".join(
             f"{index+1}. {player.name} ({player.score})"
@@ -37,11 +66,13 @@ class GameWidget(QWidget, Ui_game_widget):
                 line_edit.setText("")
             else:
                 line_edit.setText(throw.value)
-        self.throw_input_line_edit.setText("")
-        if self.game.is_over or current_player.is_turn_over:
-            self.throw_input_line_edit.setDisabled(True)
+        for child in self.darts_widget.findChildren(QAbstractButton):
+            child.setEnabled(not current_player.is_turn_over and not self.game.is_over)
+        self.next_turn_push_button.setEnabled(current_player.is_turn_over and not self.game.is_over)
+        if self.game.is_over:
+            self.finish_game_push_button.setFocus()
         else:
-            self.throw_input_line_edit.setEnabled(True)
+            self.next_turn_push_button.setFocus()
         return None
 
     def _activate_next_player(self) -> None:
@@ -49,12 +80,18 @@ class GameWidget(QWidget, Ui_game_widget):
         self._draw()
         return None
 
-    def _register_throw(self) -> None:
-        try:
-            throw = models.Throw(self.throw_input_line_edit.text().strip().upper())
-        except ValueError:
-            self.throw_input_line_edit.setText("")
-            return None
+    def _register_throw(self, widget: QPushButton) -> None:
+        if widget is self.input_miss_push_button:
+            value = "0"
+        elif self.input_single_radio_button.isChecked():
+            value = widget.text()
+        elif self.input_double_radio_button.isChecked():
+            value = f"D{widget.text()}"
+            self.input_single_radio_button.setChecked(True)
+        elif self.input_triple_radio_button.isChecked():
+            value = f"T{widget.text()}"
+            self.input_single_radio_button.setChecked(True)
+        throw = models.Throw(value)
         try:
             self.game.register_throw(throw)
         except models.ValueLimitExceededError:

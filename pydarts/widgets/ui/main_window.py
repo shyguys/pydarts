@@ -15,8 +15,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QMainWindow, QMenuBar, QSizePolicy,
-    QStatusBar, QWidget)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QSizePolicy, QStackedWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_main_window(object):
     def setupUi(self, main_window):
@@ -25,14 +25,19 @@ class Ui_main_window(object):
         main_window.resize(640, 480)
         self.central_widget = QWidget(main_window)
         self.central_widget.setObjectName(u"central_widget")
+        self.verticalLayout = QVBoxLayout(self.central_widget)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.stacked_widget = QStackedWidget(self.central_widget)
+        self.stacked_widget.setObjectName(u"stacked_widget")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.stacked_widget.sizePolicy().hasHeightForWidth())
+        self.stacked_widget.setSizePolicy(sizePolicy)
+
+        self.verticalLayout.addWidget(self.stacked_widget)
+
         main_window.setCentralWidget(self.central_widget)
-        self.menubar = QMenuBar(main_window)
-        self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 640, 22))
-        main_window.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(main_window)
-        self.statusbar.setObjectName(u"statusbar")
-        main_window.setStatusBar(self.statusbar)
 
         self.retranslateUi(main_window)
 

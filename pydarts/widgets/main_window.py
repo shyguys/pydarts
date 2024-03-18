@@ -23,17 +23,18 @@ class MainWindow(QMainWindow, Ui_main_window):
         self._load_pre_game_widget(game)
         return None
 
-    def _load_central_widget(self, widget: QWidget) -> None:
-        self.hide()
-        self.takeCentralWidget().destroy()
-        self.setCentralWidget(widget)
+    def _load_widget(self, widget: QWidget) -> None:
+        self.stacked_widget.hide()
+        if (current_widget := self.stacked_widget.currentWidget()) is not None:
+            self.stacked_widget.removeWidget(current_widget)
+            current_widget.destroy()
+        self.stacked_widget.addWidget(widget)
         self.setMinimumSize(widget.minimumSize())
         self.setMaximumSize(widget.maximumSize())
         self.setGeometry(widget.geometry())
         self.move(self.screen().geometry().center() - self.geometry().center())
         self.setWindowTitle(widget.windowTitle())
-        widget.show()
-        self.show()
+        self.stacked_widget.show()
         return None
 
     def _load_pre_game_widget(self, game: Optional[models.BaseGame] = None) -> None:
@@ -43,19 +44,20 @@ class MainWindow(QMainWindow, Ui_main_window):
             mode_type = type(game)
             player_names = [player.name for player in game.players]
             self.pre_game_widget = PreGameTabWidget(self, mode_type, player_names)
-        self._load_central_widget(self.pre_game_widget)
+        self._load_widget(self.pre_game_widget)
         self.pre_game_widget.finished.connect(lambda game: self._load_game_widget(game))
+        self.show()
         return None
 
     def _load_game_widget(self, game: models.BaseGame) -> None:
         self.game_widget = GameWidget(self, game)
-        self._load_central_widget(self.game_widget)
+        self._load_widget(self.game_widget)
         self.game_widget.finished.connect(lambda game: self._load_post_game_widget(game))
         return None
 
     def _load_post_game_widget(self, game: models.BaseGame) -> None:
         self.post_game_widget = PostGameWidget(self, game)
-        self._load_central_widget(self.post_game_widget)
+        self._load_widget(self.post_game_widget)
         self.post_game_widget.finished_exit.connect(self.finished_exit.emit)
         self.post_game_widget.finished_play_again.connect(lambda game: self.finished_play_again.emit(game))
         return None

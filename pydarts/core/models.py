@@ -17,7 +17,7 @@ class BaseGame():
 
     @classmethod
     def from_player_names(cls, player_names: list[str]) -> Self:
-        players = [Player(player_name, cls.get_score()) for player_name in player_names]
+        players = [Player(player_name, cls.get_starting_score()) for player_name in player_names]
         return cls(players)
 
     @classmethod
@@ -33,7 +33,7 @@ class BaseGame():
         raise NotImplementedError()
 
     @classmethod
-    def get_score(cls) -> int:
+    def get_starting_score(cls) -> int:
         raise NotImplementedError()
 
     def get_active_player(self) -> "Player":
@@ -93,7 +93,7 @@ class Game301(BaseGame):
         ])
 
     @classmethod
-    def get_score(cls) -> int:
+    def get_starting_score(cls) -> int:
         return 301
 
 
@@ -116,7 +116,7 @@ class Game501(BaseGame):
         ])
 
     @classmethod
-    def get_score(cls) -> int:
+    def get_starting_score(cls) -> int:
         return 501
 
 

@@ -1,3 +1,4 @@
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 import pydarts
@@ -10,6 +11,15 @@ class Application(QApplication):
         self.setApplicationName("pydarts")
         self.setApplicationDisplayName("PyDarts")
         self.setApplicationVersion(pydarts.__version__)
+        self.setWindowIcon(QIcon(pydarts.package_dir.joinpath("icons/darts.png").as_posix()))
+        # set taskbar icon in Windows
+        try:
+            from ctypes import windll
+            app_id = "shyguys.pydarts"
+            windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+        except ImportError:
+            # not on Windows, fine
+            pass
         self.main_window: MainWindow
         self._load_main_window()
         return None

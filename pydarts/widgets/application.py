@@ -11,7 +11,7 @@ class Application(QApplication):
         self.setApplicationName("pydarts")
         self.setApplicationDisplayName("PyDarts")
         self.setApplicationVersion(pydarts.__version__)
-        self.setWindowIcon(QIcon(pydarts.package_dir.joinpath("icons/darts.png").as_posix()))
+        self.setWindowIcon(QIcon(pydarts.package_dir.joinpath("icons/darts.ico").as_posix()))
         # set taskbar icon in Windows
         try:
             from ctypes import windll

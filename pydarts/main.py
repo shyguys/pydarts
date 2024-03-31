@@ -32,3 +32,7 @@ def main() -> None:
     parse(app)
     app.exec()
     return None
+
+
+if __name__ == "__main__":
+    main()

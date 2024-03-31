@@ -10,7 +10,11 @@ class Application(QApplication):
         super().__init__(args)
         self.setApplicationName("pydarts")
         self.setApplicationDisplayName("PyDarts")
-        self.setApplicationVersion(pydarts.__version__)
+        try:
+            self.setApplicationVersion(pydarts.__version__)
+        except AttributeError:
+            # workaround for portable exe
+            pass
         self.setWindowIcon(QIcon(pydarts.package_dir.joinpath("icons/darts.ico").as_posix()))
         # set taskbar icon in Windows
         try:

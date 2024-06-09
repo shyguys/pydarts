@@ -1,27 +1,27 @@
 [build-system]
-requires = ["setuptools>=68.0", "setuptools_scm>=8.0"]
+requires = ["setuptools>=70.0", "setuptools_scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pydarts"
-description = "This is a Python app for tracking the score of a Darts game."
+description = "This is a Desktop app for tracking the score of a Darts game."
 readme = "README.md"
 authors = [{ name = "Martin Neufeld" }]
 dynamic = ["version"]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-dependencies = ["pyinstaller==6.5.0", "PySide6==6.6.2"]
+dependencies = []
 
 [project.scripts]
 pydarts = "pydarts.main:main"
 
 [project.urls]
-"Homepage" = "https://github.com/shyguys/pydarts"
-"Bug Tracker" = "https://github.com/shyguys/pydarts/issues"
+"Homepage" = "https://github.com/own-neufeldm/pydarts"
+"Bug Tracker" = "https://github.com/own-neufeldm/pydarts/issues"
 
 [tool.setuptools]
 py-modules = ["pydarts"]

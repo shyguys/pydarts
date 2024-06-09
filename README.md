@@ -1,23 +1,15 @@
 # pydarts
 
-This is a Python app for tracking the score of a Darts game.
+This is a Desktop app for tracking the score of a Darts game.
 
 ## Requirements
 
-This application requires Python v3.11 (or higher) to be installed. It was developed on and for
+This application requires Python v3.12 (or higher) to be installed. It was developed on and for
 Windows (x64), though other common operating systems are probably supported too (not tested).
 
 ## Setup
 
-Assuming your environment meets the requirements stated above, install like so on Windows:
-
-1. clone this repository and `cd` into it
-2. create a virtual environment (venv): `python -m venv .\.venv`
-3. activate the virtual environment: `.\.venv\Scripts\Activate.ps1`
-4. install pydarts in the virtual environment: `pip install -e .`
-5. create an executable: `pyinstaller .\pydarts.spec`
-
-You now have a portable executable at `.\dist\pydarts.exe` which you can move and run.
+tbc
 
 ## Attributions
 

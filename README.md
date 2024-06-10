@@ -17,7 +17,7 @@ The following resources have been authored by other people:
 
 | Resource                            | Attribution                                          |
 | ----------------------------------- | ---------------------------------------------------- |
-| [App icon](pydarts/icons/darts.ico) | [Icon by Smashicons](https://www.freepik.com/search) |
+| [App icon](pydarts/assets/icon.ico) | [Icon by Smashicons](https://www.freepik.com/search) |
 
 Thank you.
 

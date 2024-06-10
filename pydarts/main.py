@@ -1,6 +1,7 @@
 import argparse
 
 import pydarts
+import pydarts.gui
 
 
 class Args(argparse.Namespace):
@@ -37,6 +38,8 @@ def main() -> None:
     if args.show_version:
         print(pydarts.__version__)
         return None
+    app = pydarts.gui.App(args.enable_debug)
+    app.mainloop()
     return None
 
 

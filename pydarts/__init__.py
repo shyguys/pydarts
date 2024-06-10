@@ -1,6 +1,8 @@
 import logging
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
+assets_dir = Path(__file__).parent / "assets"
 logger: logging.Logger
 try:
     __version__ = version(str(__package__))
